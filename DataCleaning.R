@@ -9,7 +9,7 @@ test_data <- read.csv("./Data/test.csv", stringsAsFactors = FALSE)
 #apply(train_data, 2, unique)
 
 
-selected_cols <- c("Id", "LotArea", "OverallQual", "GarageCars", "YearBuilt", "TotRmsAbvGrd", "KitchenQual", "Functional")
+selected_cols <- c("Id", "LotArea", "OverallQual", "GarageCars", "YearBuilt", "TotRmsAbvGrd", "Functional")
 cleaned_train_data <- train_data[selected_cols]
 cleaned_test_data <- test_data[selected_cols]
 cleaned_target <- train_data[c("Id", "SalePrice")]
@@ -17,14 +17,28 @@ cleaned_target <- train_data[c("Id", "SalePrice")]
 #Impute missing values in test data set
 cleaned_test_data$GarageCars =  ifelse(is.na(cleaned_test_data$GarageCars), 0, cleaned_test_data$GarageCars)
 cleaned_test_data$Functional =  ifelse(is.na(cleaned_test_data$Functional), "Typ", cleaned_test_data$Functional)
+cleaned_test_data$KitchenQual =  ifelse(is.na(cleaned_test_data$KitchenQual), "TA", cleaned_test_data$KitchenQual)
 #cleaned_test_data$TotalBsmtSF =ifelse(is.na(cleaned_test_data$TotalBsmtSF), 0, cleaned_test_data$TotalBsmtSF)
 
 #Combining month+year into single ordered feature
 cleaned_train_data$YrSold = train_data$YrSold + ((train_data$MoSold - 1) / 12)
 cleaned_test_data$YrSold = test_data$YrSold + ((test_data$MoSold - 1) / 12)
 
+#Convert kitchen quality into ranking
+kitchen_convert_factor <- function(KitQual) {
+  kitchen = ifelse(is.na(KitQual), 1,  KitQual)
+  kitchen = gsub("Po", 1, kitchen)
+  kitchen = gsub("Fa", 2, kitchen)
+  kitchen = gsub("TA", 3, kitchen)
+  kitchen = gsub("Gd", 4, kitchen)
+  kitchen = gsub("Ex", 5, kitchen)
+  kitchen = as.integer(kitchen)
+  return(kitchen)
+}
+cleaned_train_data$KitchenQual = kitchen_convert_factor(train_data$KitchenQual)
+cleaned_test_data$KitchenQual = kitchen_convert_factor(test_data$KitchenQual)
 
-#Combined Basement feature
+#Convert basement type into ranking
 basement_convert_factor <- function(FinType) {
   basement = ifelse(is.na(FinType), 0,  FinType)
   basement = gsub("Unf", 1, basement)
@@ -37,6 +51,7 @@ basement_convert_factor <- function(FinType) {
   return(basement)
 }
 
+#WCombine basement rankings in weighted average by surface of the 2 types
 basement_weight <- function(FinType1, FinType2, SF1, SF2) {
   basement1 = basement_convert_factor(FinType1)
   basement2 = basement_convert_factor(FinType2)
@@ -45,27 +60,26 @@ basement_weight <- function(FinType1, FinType2, SF1, SF2) {
   basement_weighted = ifelse(basement1SF + basement2SF == 0, 0, as.integer((basement1 * basement1SF + basement2 * basement2SF) / (basement1SF + basement2SF)))
   return(basement_weighted)
 }
-
 Train_Basement = basement_weight(train_data$BsmtFinType1, train_data$BsmtFinType2, train_data$BsmtFinSF1, train_data$BsmtFinSF2)
 Test_Basement = basement_weight(test_data$BsmtFinType1, test_data$BsmtFinType2, test_data$BsmtFinSF1, test_data$BsmtFinSF2)
 
-#Combined space feature
+#Combined living space feature
 cleaned_train_data$TotLivArea = train_data$GrLivArea + (Train_Basement / 6) * ifelse(is.na(train_data$TotalBsmtSF), 0, train_data$TotalBsmtSF)
 cleaned_test_data$TotLivArea = test_data$GrLivArea + (Test_Basement / 6) * ifelse(is.na(test_data$TotalBsmtSF), 0, test_data$TotalBsmtSF)
 
 
-#Combining number of bathrooms
-full_factor = 0.5
-cleaned_train_data$FullBath = train_data$FullBath + (Train_Basement/ 6) * train_data$BsmtFullBath + full_factor * (train_data$HalfBath + (Train_Basement/ 6) * train_data$BsmtHalfBath)
+#Combining number of bathrooms above ground and basement
+cleaned_train_data$FullBath = train_data$FullBath + (Train_Basement/ 6) * train_data$BsmtFullBath 
 cleaned_test_data$FullBath = test_data$FullBath + 
-  (Test_Basement / 6) * ifelse(is.na(test_data$BsmtFullBath), 0,  test_data$BsmtFullBath) +
-  full_factor * (test_data$HalfBath +
-                   (Test_Basement / 6) * ifelse(is.na(test_data$BsmtHalfBath), 0, test_data$BsmtHalfBath))
+  (Test_Basement / 6) * ifelse(is.na(test_data$BsmtFullBath), 0,  test_data$BsmtFullBath) 
 
-#Combined porch feature
-open_factor = 0.2
-cleaned_train_data$PorchSF = open_factor * (train_data$WoodDeckSF + train_data$OpenPorchSF) + train_data$EnclosedPorch + train_data$X3SsnPorch + train_data$ScreenPorch
-cleaned_test_data$PorchSF = open_factor * (test_data$WoodDeckSF + test_data$OpenPorchSF) + test_data$EnclosedPorch + test_data$X3SsnPorch + test_data$ScreenPorch
+cleaned_train_data$HalfBath = train_data$HalfBath + (Train_Basement/ 6) * train_data$BsmtHalfBath
+cleaned_test_data$HalfBath = test_data$HalfBath +
+  (Test_Basement / 6) * ifelse(is.na(test_data$BsmtHalfBath), 0, test_data$BsmtHalfBath)
+
+#Combined enclosed porch feature
+cleaned_train_data$PorchSF = train_data$EnclosedPorch + train_data$X3SsnPorch + train_data$ScreenPorch
+cleaned_test_data$PorchSF = test_data$EnclosedPorch + test_data$X3SsnPorch + test_data$ScreenPorch
 
 #Combined recency factor
 #remod_factor = 0.5
