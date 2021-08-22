@@ -9,34 +9,94 @@ test_data <- read.csv("./Data/test.csv", stringsAsFactors = FALSE)
 #apply(train_data, 2, unique)
 
 
-selected_cols <- c("Id", "LotArea", "OverallQual", "GarageCars", "YearBuilt", "TotRmsAbvGrd", "Functional")
+selected_cols <- c("Id", "LotArea", "OverallQual", "GarageCars", "YearBuilt", "TotRmsAbvGrd", "OverallCond", "MSSubClass", "LotShape", "LotConfig", "Neighborhood")
 cleaned_train_data <- train_data[selected_cols]
 cleaned_test_data <- test_data[selected_cols]
 cleaned_target <- train_data[c("Id", "SalePrice")]
 
 #Impute missing values in test data set
 cleaned_test_data$GarageCars =  ifelse(is.na(cleaned_test_data$GarageCars), 0, cleaned_test_data$GarageCars)
-cleaned_test_data$Functional =  ifelse(is.na(cleaned_test_data$Functional), "Typ", cleaned_test_data$Functional)
-cleaned_test_data$KitchenQual =  ifelse(is.na(cleaned_test_data$KitchenQual), "TA", cleaned_test_data$KitchenQual)
 #cleaned_test_data$TotalBsmtSF =ifelse(is.na(cleaned_test_data$TotalBsmtSF), 0, cleaned_test_data$TotalBsmtSF)
 
 #Combining month+year into single ordered feature
 cleaned_train_data$YrSold = train_data$YrSold + ((train_data$MoSold - 1) / 12)
 cleaned_test_data$YrSold = test_data$YrSold + ((test_data$MoSold - 1) / 12)
 
-#Convert kitchen quality into ranking
-kitchen_convert_factor <- function(KitQual) {
-  kitchen = ifelse(is.na(KitQual), 1,  KitQual)
-  kitchen = gsub("Po", 1, kitchen)
-  kitchen = gsub("Fa", 2, kitchen)
-  kitchen = gsub("TA", 3, kitchen)
-  kitchen = gsub("Gd", 4, kitchen)
-  kitchen = gsub("Ex", 5, kitchen)
-  kitchen = as.integer(kitchen)
-  return(kitchen)
+#Convert quality text into ranking
+convert_quality_factor <- function(Qual) {
+  ranking = ifelse(is.na(Qual), 1, Qual)
+  ranking = gsub("Po", 1, ranking)
+  ranking = gsub("Fa", 2, ranking)
+  ranking = gsub("TA", 3, ranking)
+  ranking = gsub("Gd", 4, ranking)
+  ranking = gsub("Ex", 5, ranking)
+  ranking = as.integer(ranking)
+  return(ranking)
 }
-cleaned_train_data$KitchenQual = kitchen_convert_factor(train_data$KitchenQual)
-cleaned_test_data$KitchenQual = kitchen_convert_factor(test_data$KitchenQual)
+cleaned_train_data$KitchenQual = convert_quality_factor(train_data$KitchenQual)
+cleaned_test_data$KitchenQual = convert_quality_factor(test_data$KitchenQual)
+
+cleaned_train_data$ExterQual = convert_quality_factor(train_data$ExterQual)
+cleaned_test_data$ExterQual = convert_quality_factor(test_data$ExterQual)
+
+cleaned_train_data$ExterCond = convert_quality_factor(train_data$ExterCond)
+cleaned_test_data$ExterCond = convert_quality_factor(test_data$ExterCond)
+
+cleaned_train_data$HeatingQC = convert_quality_factor(train_data$HeatingQC)
+cleaned_test_data$HeatingQC = convert_quality_factor(test_data$HeatingQC)
+
+cleaned_train_data$ExterQual = convert_quality_factor(train_data$ExterQual)
+cleaned_test_data$ExterQual = convert_quality_factor(test_data$ExterQual)
+
+#Convert Fence quality text into ranking
+convert_fence_factor <- function(Qual) {
+  ranking = ifelse(is.na(Qual), 0, Qual)
+  ranking = gsub("MnWw", 1, ranking)
+  ranking = gsub("GdWo", 2, ranking)
+  ranking = gsub("MnPrv", 2, ranking)
+  ranking = gsub("GdPrv", 3, ranking)
+  ranking = as.integer(ranking)
+  return(ranking)
+}
+cleaned_train_data$Fence = convert_fence_factor(train_data$Fence)
+cleaned_test_data$Fence = convert_fence_factor(test_data$Fence)
+
+#Convert Building Type text into ranking
+convert_buildtype_factor <- function(Qual) {
+  ranking = ifelse(is.na(Qual), 1, Qual)
+  ranking = gsub("Twnhs", 1, ranking)
+  ranking = gsub("TwnhsE", 2, ranking)
+  ranking = gsub("Duplex", 3, ranking)
+  ranking = gsub("2fmCon", 3, ranking)
+  ranking = gsub("1Fam", 4, ranking)
+  ranking = as.integer(ranking)
+  return(ranking)
+}
+cleaned_train_data$BldgType = convert_buildtype_factor(train_data$BldgType)
+cleaned_test_data$BldgType = convert_buildtype_factor(test_data$BldgType)
+
+#Convert Functional text into ranking
+convert_functional_factor <- function(Qual) {
+  ranking = ifelse(is.na(Qual), 1, Qual)
+  ranking = gsub("Sal", 0, ranking)
+  ranking = gsub("Sev", 0, ranking)
+  ranking = gsub("Maj1", 1, ranking)
+  ranking = gsub("Maj2", 1, ranking)
+  ranking = gsub("Mod", 2, ranking)
+  ranking = gsub("Min1", 3, ranking)
+  ranking = gsub("Min2", 3, ranking)
+  ranking = gsub("Typ", 4, ranking)
+  ranking = as.integer(ranking)
+  return(ranking)
+}
+cleaned_train_data$Functional = convert_functional_factor(train_data$Functional)
+cleaned_test_data$Functional = convert_functional_factor(test_data$Functional)
+
+#Convert proximity features
+cleaned_train_data$ProxPos = ifelse((train_data$Condition1 == PosA) | (train_data$Condition2 == PosA), 2, ifelse((train_data$Condition1 == PosN) | (train_data$Condition2 == PosN), 1, 0))
+cleaned_train_data$ProxRoad = ifelse((train_data$Condition1 == Artery) | (train_data$Condition2 == Artery), 2, ifelse((train_data$Condition1 == Feedr) | (train_data$Condition2 == Feedr), 1, 0))
+cleaned_train_data$ProxRail = ifelse((train_data$Condition1 == RRAn) | (train_data$Condition1 == RRAe) | (train_data$Condition2 == RRAn) | (train_data$Condition2 == RRAe), 2,
+                                     ifelse((train_data$Condition1 == RRNn) | (train_data$Condition2 == RRNn) | (train_data$Condition1 == RRNe) | (train_data$Condition2 == RRNe), 1, 0))
 
 #Convert basement type into ranking
 basement_convert_factor <- function(FinType) {
@@ -51,7 +111,7 @@ basement_convert_factor <- function(FinType) {
   return(basement)
 }
 
-#WCombine basement rankings in weighted average by surface of the 2 types
+#Combine basement rankings in weighted average by surface of the 2 types
 basement_weight <- function(FinType1, FinType2, SF1, SF2) {
   basement1 = basement_convert_factor(FinType1)
   basement2 = basement_convert_factor(FinType2)
