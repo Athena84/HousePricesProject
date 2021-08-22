@@ -29,6 +29,12 @@ BldgType_boxplot <- ggplot(data = cleaned_train_data, aes(x = BldgType, y = Sale
   geom_boxplot()
 BldgType_boxplot
 
+cleaned_train_data$Functional = as.factor(cleaned_train_data$Functional)
+Functional_boxplot <- ggplot(data = cleaned_train_data, aes(x = Functional, y = SalePrice)) +
+  geom_boxplot()
+Functional_boxplot
+
+
 
 #Proximity general
 cleaned_train_data$Condition1 = as.factor(cleaned_train_data$Condition1)
