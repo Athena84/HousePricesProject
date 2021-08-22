@@ -9,14 +9,14 @@ test_data <- read.csv("./Data/test.csv", stringsAsFactors = FALSE)
 #apply(train_data, 2, unique)
 
 
-selected_cols <- c("Id", "LotArea", "OverallQual", "GarageCars", "YearBuilt", "TotRmsAbvGrd", "OverallCond", "MSSubClass", "LotShape", "LotConfig", "GrLivArea", "TotalBsmtSF", "Condition1", "Condition2", "MoSold")
+selected_cols <- c("Id", "LotArea", "OverallQual", "GarageCars", "TotRmsAbvGrd", "OverallCond", "GrLivArea", "TotalBsmtSF")
 cleaned_train_data <- train_data[selected_cols]
 cleaned_test_data <- test_data[selected_cols]
 cleaned_target <- train_data[c("Id", "SalePrice")]
 
 #Impute missing values in test data set
 cleaned_test_data$GarageCars =  ifelse(is.na(cleaned_test_data$GarageCars), 0, cleaned_test_data$GarageCars)
-#cleaned_test_data$TotalBsmtSF =ifelse(is.na(cleaned_test_data$TotalBsmtSF), 0, cleaned_test_data$TotalBsmtSF)
+cleaned_test_data$TotalBsmtSF =ifelse(is.na(cleaned_test_data$TotalBsmtSF), 0, cleaned_test_data$TotalBsmtSF)
 
 #Combining month+year into single ordered feature
 cleaned_train_data$YrSold = train_data$YrSold + ((train_data$MoSold - 1) / 12)
@@ -48,13 +48,17 @@ cleaned_test_data$HeatingQC = convert_quality_factor(test_data$HeatingQC)
 cleaned_train_data$GarageQual = convert_quality_factor(train_data$GarageQual)
 cleaned_test_data$GarageQual = convert_quality_factor(test_data$GarageQual)
 
+cleaned_train_data$PoolQC = convert_quality_factor(train_data$PoolQC)
+cleaned_test_data$PoolQC = convert_quality_factor(test_data$PoolQC)
+
+
 #Convert Fence quality text into ranking
 convert_fence_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 0, Qual)
+  ranking = ifelse(is.na(Qual), 5, Qual)
   ranking = gsub("MnWw", 1, ranking)
   ranking = gsub("GdWo", 2, ranking)
-  ranking = gsub("MnPrv", 2, ranking)
-  ranking = gsub("GdPrv", 3, ranking)
+  ranking = gsub("MnPrv", 3, ranking)
+  ranking = gsub("GdPrv", 4, ranking)
   ranking = as.integer(ranking)
   return(ranking)
 }
@@ -128,22 +132,22 @@ basement_weight <- function(FinType1, FinType2, SF1, SF2, SF3) {
 Train_Basement = basement_weight(train_data$BsmtFinType1, train_data$BsmtFinType2, train_data$BsmtFinSF1, train_data$BsmtFinSF2, train_data$BsmtUnfSF)
 Test_Basement = basement_weight(test_data$BsmtFinType1, test_data$BsmtFinType2, test_data$BsmtFinSF1, test_data$BsmtFinSF2, test_data$BsmtUnfSF)
 
-#Combined living space feature
-cleaned_train_data$WeightedTotLivArea = train_data$GrLivArea + (Train_Basement / basement_factor) * ifelse(is.na(train_data$TotalBsmtSF), 0, train_data$TotalBsmtSF)
-cleaned_train_data$TotLivArea = train_data$GrLivArea + train_data$TotalBsmtSF
-cleaned_test_data$TotLivArea = test_data$GrLivArea + (Test_Basement / basement_factor) * ifelse(is.na(test_data$TotalBsmtSF), 0, test_data$TotalBsmtSF)
+cleaned_train_data$BasementQualFactor = Train_Basement
+cleaned_test_data$BasementQualFactor = ifelse(is.na(Test_Basement), 0, Test_Basement)
 
-cleaned_train_data$WeightedBasementSF = (Train_Basement / basement_factor) * ifelse(is.na(train_data$TotalBsmtSF), 0, train_data$TotalBsmtSF)
-cleaned_train_data$BasementWeigths = Train_Basement
+#Combined living space feature
+#cleaned_train_data$WeightedTotLivArea = train_data$GrLivArea + (Train_Basement / basement_factor) * ifelse(is.na(train_data$TotalBsmtSF), 0, train_data$TotalBsmtSF)
+#cleaned_train_data$TotLivArea = train_data$GrLivArea + train_data$TotalBsmtSF
+#cleaned_test_data$TotLivArea = test_data$GrLivArea + ifelse(is.na(test_data$TotalBsmtSF), 0, test_data$TotalBsmtSF)
+#cleaned_train_data$WeightedBasementSF = (Train_Basement / basement_factor) * ifelse(is.na(train_data$TotalBsmtSF), 0, train_data$TotalBsmtSF)
+
 
 #Combining number of bathrooms above ground and basement
-cleaned_train_data$FullBath = train_data$FullBath + (Train_Basement / basement_factor) * train_data$BsmtFullBath 
-cleaned_test_data$FullBath = test_data$FullBath + 
-  (Test_Basement / basement_factor) * ifelse(is.na(test_data$BsmtFullBath), 0,  test_data$BsmtFullBath) 
+cleaned_train_data$FullBath = train_data$FullBath + train_data$BsmtFullBath 
+cleaned_test_data$FullBath = test_data$FullBath + ifelse(is.na(test_data$BsmtFullBath), 1,  test_data$BsmtFullBath) 
 
-cleaned_train_data$HalfBath = train_data$HalfBath + (Train_Basement/ basement_factor) * train_data$BsmtHalfBath
-cleaned_test_data$HalfBath = test_data$HalfBath +
-  (Test_Basement / basement_factor) * ifelse(is.na(test_data$BsmtHalfBath), 0, test_data$BsmtHalfBath)
+cleaned_train_data$HalfBath = train_data$HalfBath + train_data$BsmtHalfBath
+cleaned_test_data$HalfBath = test_data$HalfBath + ifelse(is.na(test_data$BsmtHalfBath), 1, test_data$BsmtHalfBath)
 
 #Combined enclosed porch feature
 cleaned_train_data$PorchSF = train_data$EnclosedPorch + train_data$X3SsnPorch + train_data$ScreenPorch
@@ -153,6 +157,16 @@ cleaned_test_data$PorchSF = test_data$EnclosedPorch + test_data$X3SsnPorch + tes
 cleaned_train_data$Neighborhood = factor(reorder(train_data$Neighborhood, train_data$SalePrice, median))
 cleaned_test_data$Neighborhood = as.integer(factor(test_data$Neighborhood, levels = levels(cleaned_train_data$Neighborhood)))
 cleaned_train_data$Neighborhood = as.integer(cleaned_train_data$Neighborhood)
+
+#Store MSSubClass as integers ordered by median saleprice
+cleaned_train_data$MSSubClass = factor(reorder(train_data$MSSubClass, train_data$SalePrice, median))
+cleaned_test_data$MSSubClass = as.integer(factor(test_data$MSSubClass, levels = c(levels(cleaned_train_data$MSSubClass), 150)))
+cleaned_train_data$MSSubClass = as.integer(cleaned_train_data$MSSubClass)
+
+#Store SaleCondition as integers ordered by median saleprice
+cleaned_train_data$SaleCondition = factor(reorder(train_data$SaleCondition, train_data$SalePrice, median))
+cleaned_test_data$SaleCondition = as.integer(factor(test_data$SaleCondition, levels = levels(cleaned_train_data$SaleCondition)))
+cleaned_train_data$SaleCondition = as.integer(cleaned_train_data$SaleCondition)
 
 #Combined recency factor
 #remod_factor = 0.5
@@ -170,3 +184,32 @@ colMeans(is.na(test_data)) * 100
 colMeans(is.na(cleaned_train_data)) * 100
 colMeans(is.na(cleaned_test_data)) * 100
 
+
+#Comparing living space metrics
+library(car)
+model_above = lm(SalePrice ~ GrLivArea, data = train_data)
+summary(model_above)
+
+model_basement = lm(SalePrice ~ TotalBsmtSF, data = train_data)
+summary(model_basement)
+
+model_combined = lm(SalePrice ~ GrLivArea + TotalBsmtSF, data = train_data)
+summary(model_combined)
+
+model_aggregate = lm(train_data$SalePrice ~ cleaned_train_data$TotLivArea)
+summary(model_aggregate)
+
+model_aggregate_quality = lm(train_data$SalePrice ~ cleaned_train_data$TotLivArea + train_data$OverallQual)
+summary(model_aggregate_quality)
+
+model_weighted_aggregate = lm(train_data$SalePrice ~ cleaned_train_data$WeightedTotLivArea)
+summary(model_weighted_aggregate)
+
+model_weighted_aggregate_quality = lm(train_data$SalePrice ~ cleaned_train_data$WeightedTotLivArea + train_data$OverallQual)
+summary(model_weighted_aggregate_quality)
+
+model_combined_1quality = lm(train_data$SalePrice ~ train_data$GrLivArea + train_data$TotalBsmtSF + Train_Basement)
+summary(model_combined_1quality)
+
+model_combined_2quality = lm(train_data$SalePrice ~ train_data$GrLivArea + train_data$TotalBsmtSF + Train_Basement + train_data$OverallQual)
+summary(model_combined_2quality)
