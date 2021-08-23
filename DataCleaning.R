@@ -6,10 +6,10 @@ test_data <- read.csv("./Data/test.csv", stringsAsFactors = FALSE)
 #head(cleaned_train_data)
 #head(test_data)
 #summary(train_data)
-#apply(train_data, 2, unique)
+apply(train_data, 2, unique)
 
 
-selected_cols <- c("Id", "LotArea", "OverallQual", "GarageCars", "TotRmsAbvGrd", "OverallCond", "GrLivArea", "TotalBsmtSF")
+selected_cols <- c("Id", "LotArea", "OverallQual", "GarageCars", "TotRmsAbvGrd", "OverallCond", "GrLivArea", "TotalBsmtSF", "Fireplaces", "CentralAir", "Street")
 cleaned_train_data <- train_data[selected_cols]
 cleaned_test_data <- test_data[selected_cols]
 cleaned_target <- train_data[c("Id", "SalePrice")]
@@ -23,8 +23,8 @@ cleaned_train_data$YrSold = train_data$YrSold + ((train_data$MoSold - 1) / 12)
 cleaned_test_data$YrSold = test_data$YrSold + ((test_data$MoSold - 1) / 12)
 
 #Convert quality text into ranking
-convert_quality_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 1, Qual)
+convert_quality_factor <- function(Qual, imputed_Val) {
+  ranking = ifelse(is.na(Qual), imputed_Val, Qual)
   ranking = gsub("Po", 1, ranking)
   ranking = gsub("Fa", 2, ranking)
   ranking = gsub("TA", 3, ranking)
@@ -33,24 +33,26 @@ convert_quality_factor <- function(Qual) {
   ranking = as.integer(ranking)
   return(ranking)
 }
-cleaned_train_data$KitchenQual = convert_quality_factor(train_data$KitchenQual)
-cleaned_test_data$KitchenQual = convert_quality_factor(test_data$KitchenQual)
+cleaned_train_data$KitchenQual = convert_quality_factor(train_data$KitchenQual, 1)
+cleaned_test_data$KitchenQual = convert_quality_factor(test_data$KitchenQual, 1)
 
-cleaned_train_data$ExterQual = convert_quality_factor(train_data$ExterQual)
-cleaned_test_data$ExterQual = convert_quality_factor(test_data$ExterQual)
+cleaned_train_data$ExterQual = convert_quality_factor(train_data$ExterQual, 1)
+cleaned_test_data$ExterQual = convert_quality_factor(test_data$ExterQual, 1)
 
-cleaned_train_data$ExterCond = convert_quality_factor(train_data$ExterCond)
-cleaned_test_data$ExterCond = convert_quality_factor(test_data$ExterCond)
+cleaned_train_data$ExterCond = convert_quality_factor(train_data$ExterCond, 1)
+cleaned_test_data$ExterCond = convert_quality_factor(test_data$ExterCond, 1)
 
-cleaned_train_data$HeatingQC = convert_quality_factor(train_data$HeatingQC)
-cleaned_test_data$HeatingQC = convert_quality_factor(test_data$HeatingQC)
+cleaned_train_data$HeatingQC = convert_quality_factor(train_data$HeatingQC, 1)
+cleaned_test_data$HeatingQC = convert_quality_factor(test_data$HeatingQC, 1)
 
-cleaned_train_data$GarageQual = convert_quality_factor(train_data$GarageQual)
-cleaned_test_data$GarageQual = convert_quality_factor(test_data$GarageQual)
+cleaned_train_data$GarageQual = convert_quality_factor(train_data$GarageQual, 0)
+cleaned_test_data$GarageQual = convert_quality_factor(test_data$GarageQual, 0)
 
-cleaned_train_data$PoolQC = convert_quality_factor(train_data$PoolQC)
-cleaned_test_data$PoolQC = convert_quality_factor(test_data$PoolQC)
+cleaned_train_data$PoolQC = convert_quality_factor(train_data$PoolQC, 0)
+cleaned_test_data$PoolQC = convert_quality_factor(test_data$PoolQC, 0)
 
+cleaned_train_data$BsmtCond = convert_quality_factor(train_data$BsmtCond, 1)
+cleaned_test_data$BsmtCond = convert_quality_factor(test_data$BsmtCond, 1)
 
 #Convert Fence quality text into ranking
 convert_fence_factor <- function(Qual) {
@@ -64,6 +66,20 @@ convert_fence_factor <- function(Qual) {
 }
 cleaned_train_data$Fence = convert_fence_factor(train_data$Fence)
 cleaned_test_data$Fence = convert_fence_factor(test_data$Fence)
+
+#Convert Basement exposure text into ranking
+convert_BsmtExp_factor <- function(Qual) {
+  ranking = ifelse(is.na(Qual), 0, Qual)
+  ranking = gsub("No", 1, ranking)
+  ranking = gsub("Mn", 2, ranking)
+  ranking = gsub("Av", 3, ranking)
+  ranking = gsub("Gd", 4, ranking)
+  ranking = as.integer(ranking)
+  return(ranking)
+}
+cleaned_train_data$BsmtExposure = convert_BsmtExp_factor (train_data$BsmtExposure)
+cleaned_test_data$BsmtExposure = convert_BsmtExp_factor (test_data$BsmtExposure)
+
 
 #Convert Building Type text into ranking
 convert_buildtype_factor <- function(Qual) {
@@ -104,6 +120,10 @@ cleaned_train_data$ProxRail = ifelse((train_data$Condition1 == "RRAn") | (train_
 cleaned_test_data$ProxPos = ifelse((test_data$Condition1 == "PosA") | (test_data$Condition2 == "PosA") | (test_data$Condition1 == "PosN") | (test_data$Condition2 == "PosN"), 1, 0)
 cleaned_test_data$ProxRoad = ifelse((test_data$Condition1 == "Artery") | (test_data$Condition2 == "Artery") | (test_data$Condition1 == "Feedr") | (test_data$Condition2 == "Feedr"), 1, 0)
 cleaned_test_data$ProxRail = ifelse((test_data$Condition1 == "RRAn") | (test_data$Condition1 == "RRAe") | (test_data$Condition2 == "RRAn") | (test_data$Condition2 == "RRAe") | (test_data$Condition1 == "RRNn") | (test_data$Condition1 == "RRNe") | (test_data$Condition2 == "RRNn") | (test_data$Condition2 == "RRNe"), 1, 0)
+
+#Convert heating into gas or not
+cleaned_train_data$Heating = ifelse((train_data$Heating == "GasA" | train_data$Heating == "GasW" |train_data$Heating == "OthW"), 1, 0)
+cleaned_test_data$Heating = ifelse((test_data$Heating == "GasA" | test_data$Heating == "GasW" |test_data$Heating == "OthW"), 1, 0)
 
 #Convert basement type into ranking
 basement_factor = 6

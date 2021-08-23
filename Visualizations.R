@@ -112,8 +112,55 @@ Fence_boxplot <- ggplot(data = cleaned_train_data, aes(x = Fence, y = SalePrice)
   geom_boxplot()
 Fence_boxplot
 
+cleaned_train_data$PoolQC = as.factor(cleaned_train_data$PoolQC)
+PoolQC_boxplot <- ggplot(data = cleaned_train_data, aes(x = PoolQC, y = SalePrice)) +
+  geom_boxplot()
+PoolQC_boxplot
 
+cleaned_train_data$Fireplaces = as.factor(cleaned_train_data$Fireplaces)
+Fireplaces_boxplot <- ggplot(data = cleaned_train_data, aes(x = Fireplaces, y = SalePrice)) +
+  geom_boxplot()
+Fireplaces_boxplot
 
+cleaned_train_data$KitchenAbvGr = as.factor(cleaned_train_data$KitchenAbvGr)
+Kitchens_boxplot <- ggplot(data = cleaned_train_data, aes(x = KitchenAbvGr, y = SalePrice)) +
+  geom_boxplot()
+Kitchens_boxplot
+
+cleaned_train_data$BedroomAbvGr = as.factor(cleaned_train_data$BedroomAbvGr)
+Bedrooms_boxplot <- ggplot(data = cleaned_train_data, aes(x = BedroomAbvGr, y = SalePrice)) +
+  geom_boxplot()
+Bedrooms_boxplot
+
+cleaned_train_data$CentralAir = as.factor(cleaned_train_data$CentralAir)
+CentralAir_boxplot <- ggplot(data = cleaned_train_data, aes(x = CentralAir, y = SalePrice)) +
+  geom_boxplot()
+CentralAir_boxplot
+
+cleaned_train_data$Heating = as.factor(cleaned_train_data$Heating)
+Heating_boxplot <- ggplot(data = cleaned_train_data, aes(x = Heating, y = SalePrice)) +
+  geom_boxplot()
+Heating_boxplot
+
+cleaned_train_data$BsmtExposure = as.factor(cleaned_train_data$BsmtExposure)
+BsmtExposure_boxplot <- ggplot(data = cleaned_train_data, aes(x = BsmtExposure, y = SalePrice)) +
+  geom_boxplot()
+BsmtExposure_boxplot
+
+cleaned_train_data$BsmtCond = as.factor(cleaned_train_data$BsmtCond)
+BsmtCond_boxplot <- ggplot(data = cleaned_train_data, aes(x = BsmtCond, y = SalePrice)) +
+  geom_boxplot()
+BsmtCond_boxplot
+
+cleaned_train_data$Alley = as.factor(cleaned_train_data$Alley)
+Alley_boxplot <- ggplot(data = cleaned_train_data, aes(x = Alley, y = SalePrice)) +
+  geom_boxplot()
+Alley_boxplot
+
+cleaned_train_data$Street = as.factor(cleaned_train_data$Street)
+Street_boxplot <- ggplot(data = cleaned_train_data, aes(x = Street, y = SalePrice)) +
+  geom_boxplot()
+Street_boxplot
 
 
 #Scatter plots house prices vs numerical
@@ -133,7 +180,10 @@ MoSold_scatterplot <- ggplot(data = cleaned_train_data, aes(x = MoSold, y = Sale
   geom_point()
 Porch_scatterplot <- ggplot(data = cleaned_train_data, aes(x = PorchSF, y = SalePrice)) +
   geom_point()
-
+LowQualFinSF_scatterplot <- ggplot(data = cleaned_train_data, aes(x = LowQualFinSF, y = SalePrice)) +
+  geom_point()
+LotFrontage_scatterplot <- ggplot(data = cleaned_train_data, aes(x = LotFrontage, y = SalePrice)) +
+  geom_point()
 
 AboveGrSpace_scatterplot
 BasementSpace_scatterplot
@@ -143,3 +193,5 @@ wLivingSpace_scatterplot
 YrSold_scatterplot
 MoSold_scatterplot
 Porch_scatterplot
+LowQualFinSF_scatterplot
+LotFrontage_scatterplot
