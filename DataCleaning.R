@@ -157,8 +157,8 @@ cleaned_test_data$BasementQualFactor = ifelse(is.na(Test_Basement), 0, Test_Base
 
 #Combined living space feature
 #cleaned_train_data$WeightedTotLivArea = train_data$GrLivArea + (Train_Basement / basement_factor) * ifelse(is.na(train_data$TotalBsmtSF), 0, train_data$TotalBsmtSF)
-#cleaned_train_data$TotLivArea = train_data$GrLivArea + train_data$TotalBsmtSF
-#cleaned_test_data$TotLivArea = test_data$GrLivArea + ifelse(is.na(test_data$TotalBsmtSF), 0, test_data$TotalBsmtSF)
+cleaned_train_data$TotLivArea = train_data$GrLivArea + train_data$TotalBsmtSF
+cleaned_test_data$TotLivArea = test_data$GrLivArea + ifelse(is.na(test_data$TotalBsmtSF), 0, test_data$TotalBsmtSF)
 #cleaned_train_data$WeightedBasementSF = (Train_Basement / basement_factor) * ifelse(is.na(train_data$TotalBsmtSF), 0, train_data$TotalBsmtSF)
 
 

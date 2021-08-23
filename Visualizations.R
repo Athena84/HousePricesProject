@@ -1,5 +1,13 @@
 
 library(tidyverse)
+library(ggthemes)
+library(scales)
+
+old_theme <- theme_set(theme_linedraw() +
+                         theme(plot.title = element_text(size = 16, face = "bold")) +
+                         theme(axis.title = element_text(size = 14,)) +
+                         theme(axis.text = element_text(size = 14,)) 
+                       ) 
 
 #Read the training data
 cleaned_train_data <- read.csv("./Data/cleaned_train.csv", stringsAsFactors = TRUE)
@@ -14,10 +22,7 @@ Density_Prices <- ggplot(data = cleaned_train_data, aes(x = SalePrice)) +
 Density_Prices
 
 #Boxplots house prices grouped for categorical
-cleaned_train_data$OverallQual = as.factor(cleaned_train_data$OverallQual)
-OverallQual_boxplot <- ggplot(data = cleaned_train_data, aes(x = OverallQual, y = SalePrice)) +
-  geom_boxplot()
-OverallQual_boxplot
+
 
 cleaned_train_data$OverallCond = as.factor(cleaned_train_data$OverallCond)
 OverallCond_boxplot <- ggplot(data = cleaned_train_data, aes(x = OverallCond, y = SalePrice)) +
@@ -164,14 +169,7 @@ Street_boxplot
 
 
 #Scatter plots house prices vs numerical
-AboveGrSpace_scatterplot <- ggplot(data = cleaned_train_data, aes(x = GrLivArea, y = SalePrice)) +
-  geom_point()
-BasementSpace_scatterplot <- ggplot(data = cleaned_train_data, aes(x = TotalBsmtSF, y = SalePrice, color = BasementWeigths)) +
-  geom_point()
-wBasementSpace_scatterplot <- ggplot(data = cleaned_train_data, aes(x = WeightedBasementSF, y = SalePrice)) +
-  geom_point()
-LivingSpace_scatterplot <- ggplot(data = cleaned_train_data, aes(x = TotLivArea, y = SalePrice)) +
-  geom_point()
+
 wLivingSpace_scatterplot <- ggplot(data = cleaned_train_data, aes(x = WeightedTotLivArea, y = SalePrice)) +
   geom_point()
 YrSold_scatterplot <- ggplot(data = cleaned_train_data, aes(x = YrSold, y = SalePrice)) +
@@ -195,3 +193,50 @@ MoSold_scatterplot
 Porch_scatterplot
 LowQualFinSF_scatterplot
 LotFrontage_scatterplot
+
+
+
+
+#================Presentation selection
+cleaned_train_data$OverallQual = as.factor(cleaned_train_data$OverallQual)
+OverallQual_boxplot <- ggplot(data = cleaned_train_data, aes(x = OverallQual, y = SalePrice)) +
+  geom_boxplot() + 
+  labs(title="Distribution of House prices by overall quality rating", x ="Overal qaulity rating", y = "House price ($)") +
+  scale_y_continuous(labels = label_number(suffix = " k", scale = 1e-3))
+OverallQual_boxplot2 <- ggplot(data = cleaned_train_data, aes(x = OverallQual, y = TotLivArea)) +
+  geom_boxplot() + 
+  labs(title="Distribution of living area by overall quality rating", x ="Overal qaulity rating", y = "Linving area (sqf)") +
+  scale_y_continuous(labels = label_number(suffix = " k", scale = 1e-3))
+
+OverallQual_boxplot
+OverallQual_boxplot2
+
+AboveGrSpace_scatterplot <- ggplot(data = cleaned_train_data, aes(x = GrLivArea, y = SalePrice)) +
+  geom_point() +
+  scale_y_continuous(labels = label_number(suffix = " k", scale = 1e-3))
+BasementSpace_scatterplot <- ggplot(data = cleaned_train_data, aes(x = TotalBsmtSF, y = SalePrice)) +
+  geom_point() +
+  scale_y_continuous(labels = label_number(suffix = " k", scale = 1e-3))
+LivingSpace_scatterplot <- ggplot(data = cleaned_train_data, aes(x = TotLivArea, y = SalePrice)) +
+  geom_point() +
+  scale_y_continuous(labels = label_number(suffix = " k", scale = 1e-3))
+LivingSpace_quality_scatterplot <- ggplot(data = cleaned_train_data, aes(x = TotLivArea, y = SalePrice, color = OverallQual)) +
+  geom_point() +
+  scale_y_continuous(labels = label_number(suffix = " k", scale = 1e-3))
+
+AboveGrSpace_scatterplot
+BasementSpace_scatterplot
+LivingSpace_scatterplot
+LivingSpace_quality_scatterplot
+
+
+selection <- select(cleaned_train_data, c("SalePrice", "TotLivArea", "OverallQual"))
+selection <- selection[(selection$TotLivArea < 4000),]
+selection <- selection[(selection$TotLivArea > 1000),]
+selection$TotLivArea = as.factor(cut_width(selection$TotLivArea / 1000, width = 0.25, boundary = 1))
+grouped <- group_by(selection, TotLivArea, OverallQual) %>%
+  summarize(., avSalePrice = mean(SalePrice))
+grouped_plot <- ggplot(data = grouped, aes(x = TotLivArea, y = avSalePrice, color = OverallQual)) +
+  geom_point() + 
+  scale_y_continuous(labels = label_number(suffix = " k", scale = 1e-3))
+grouped_plot
