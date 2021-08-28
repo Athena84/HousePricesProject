@@ -34,6 +34,41 @@ BldgType_boxplot <- ggplot(data = cleaned_train_data, aes(x = BldgType, y = Sale
   geom_boxplot()
 BldgType_boxplot
 
+cleaned_train_data$RoofStyle = as.factor(cleaned_train_data$RoofStyle)
+RoofStyle_boxplot <- ggplot(data = cleaned_train_data, aes(x = RoofStyle, y = SalePrice)) +
+  geom_boxplot()
+RoofStyle_boxplot
+
+cleaned_train_data$RoofMatl = as.factor(cleaned_train_data$RoofMatl)
+RoofMatl_boxplot <- ggplot(data = cleaned_train_data, aes(x = RoofMatl, y = SalePrice)) +
+  geom_boxplot()
+RoofMatl_boxplot
+
+cleaned_train_data$Exterior1st = as.factor(cleaned_train_data$Exterior1st)
+Exterior1st_boxplot <- ggplot(data = cleaned_train_data, aes(x = Exterior1st, y = SalePrice)) +
+  geom_boxplot()
+Exterior1st_boxplot
+
+cleaned_train_data$MasVnrType = as.factor(cleaned_train_data$MasVnrType)
+MasVnrType_boxplot <- ggplot(data = cleaned_train_data, aes(x = MasVnrType, y = SalePrice)) +
+  geom_point()
+MasVnrType_boxplot
+
+cleaned_train_data$Foundation = as.factor(cleaned_train_data$Foundation)
+Foundation_boxplot <- ggplot(data = cleaned_train_data, aes(x = Foundation, y = SalePrice)) +
+  geom_boxplot()
+Foundation_boxplot
+
+cleaned_train_data$Electrical = as.factor(cleaned_train_data$Electrical)
+Electrical_boxplot <- ggplot(data = cleaned_train_data, aes(x = Electrical, y = SalePrice)) +
+  geom_boxplot()
+Electrical_boxplot
+
+cleaned_train_data$GarageType = as.factor(cleaned_train_data$GarageType)
+GarageType_boxplot <- ggplot(data = cleaned_train_data, aes(x = GarageType, y = SalePrice)) +
+  geom_boxplot()
+GarageType_boxplot
+
 #Works if data still as names:
 cleaned_train_data$MSSubClass = as.factor(cleaned_train_data$MSSubClass)
 MSSubClass_boxplot <- ggplot(data = cleaned_train_data, aes(x = reorder(MSSubClass, SalePrice, median), y = SalePrice)) +

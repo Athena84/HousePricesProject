@@ -9,14 +9,16 @@ test_data <- read.csv("./Data/test.csv", stringsAsFactors = FALSE)
 apply(train_data, 2, unique)
 
 
-selected_cols <- c("Id", "LotArea", "OverallQual", "GarageCars", "TotRmsAbvGrd", "OverallCond", "GrLivArea", "TotalBsmtSF", "Fireplaces", "CentralAir", "Street")
+selected_cols <- c("Id", "LotArea", "OverallQual", "GarageCars", "TotRmsAbvGrd", "OverallCond", "Fireplaces", "CentralAir", "Street")
 cleaned_train_data <- train_data[selected_cols]
 cleaned_test_data <- test_data[selected_cols]
 cleaned_target <- train_data[c("Id", "SalePrice")]
 
 #Impute missing values in test data set
 cleaned_test_data$GarageCars =  ifelse(is.na(cleaned_test_data$GarageCars), 0, cleaned_test_data$GarageCars)
-cleaned_test_data$TotalBsmtSF =ifelse(is.na(cleaned_test_data$TotalBsmtSF), 0, cleaned_test_data$TotalBsmtSF)
+#cleaned_train_data$LotFrontage =  ifelse(is.na(cleaned_train_data$LotFrontage ), 0, cleaned_train_data$LotFrontage)
+#cleaned_test_data$LotFrontage =  ifelse(is.na(cleaned_test_data$LotFrontage ), 0, cleaned_test_data$LotFrontage)
+#cleaned_test_data$TotalBsmtSF =ifelse(is.na(cleaned_test_data$TotalBsmtSF), 0, cleaned_test_data$TotalBsmtSF)
 
 #Combining month+year into single ordered feature
 cleaned_train_data$YrSold = train_data$YrSold + ((train_data$MoSold - 1) / 12)
@@ -54,6 +56,19 @@ cleaned_test_data$PoolQC = convert_quality_factor(test_data$PoolQC, 0)
 cleaned_train_data$BsmtCond = convert_quality_factor(train_data$BsmtCond, 1)
 cleaned_test_data$BsmtCond = convert_quality_factor(test_data$BsmtCond, 1)
 
+#Convert Utility text into ranking
+convert_utility_factor <- function(Qual) {
+  ranking = ifelse(is.na(Qual), 4, Qual)
+  ranking = gsub("AllPub", 4, ranking)
+  ranking = gsub("NoSewr", 3, ranking)
+  ranking = gsub("NoSeWa", 2, ranking)
+  ranking = gsub("ELO", 1, ranking)
+  ranking = as.integer(ranking)
+  return(ranking)
+}
+cleaned_train_data$Utilities = convert_utility_factor(train_data$Utilities)
+cleaned_test_data$Utilities = convert_utility_factor(test_data$Utilities)
+
 #Convert Fence quality text into ranking
 convert_fence_factor <- function(Qual) {
   ranking = ifelse(is.na(Qual), 5, Qual)
@@ -66,6 +81,31 @@ convert_fence_factor <- function(Qual) {
 }
 cleaned_train_data$Fence = convert_fence_factor(train_data$Fence)
 cleaned_test_data$Fence = convert_fence_factor(test_data$Fence)
+
+#Convert Slope quality text into ranking
+convert_slope_factor <- function(Qual) {
+  ranking = ifelse(is.na(Qual), 0, Qual)
+  ranking = gsub("MnWw", 1, ranking)
+  ranking = gsub("GdWo", 2, ranking)
+  ranking = as.integer(ranking)
+  return(ranking)
+}
+cleaned_train_data$LandSlope = convert_slope_factor(train_data$LandSlope)
+cleaned_test_data$LandSlope = convert_slope_factor(test_data$LandSlope)
+
+
+#Convert LotShape text into ranking
+convert_lotshape_factor <- function(Qual) {
+  ranking = ifelse(is.na(Qual), 0, Qual)
+  ranking = gsub("Reg", 0, ranking)
+  ranking = gsub("IR1", 1, ranking)
+  ranking = gsub("IR2", 2, ranking)
+  ranking = gsub("IR3", 3, ranking)
+  ranking = as.integer(ranking)
+  return(ranking)
+}
+cleaned_train_data$LotShape  = convert_lotshape_factor(train_data$LotShape )
+cleaned_test_data$LotShape  = convert_lotshape_factor(test_data$LotShape )
 
 #Convert Basement exposure text into ranking
 convert_BsmtExp_factor <- function(Qual) {
@@ -92,8 +132,51 @@ convert_buildtype_factor <- function(Qual) {
   ranking = as.integer(ranking)
   return(ranking)
 }
-cleaned_train_data$BldgType = convert_buildtype_factor(train_data$BldgType)
-cleaned_test_data$BldgType = convert_buildtype_factor(test_data$BldgType)
+cleaned_train_data$MasVnrType = convert_buildtype_factor(train_data$MasVnrType)
+cleaned_test_data$MasVnrType = convert_buildtype_factor(test_data$MasVnrType)
+
+#Convert Masonry Type text into ranking
+convert_masonry_factor <- function(Qual) {
+  ranking = ifelse(is.na(Qual), 0, Qual)
+  ranking = gsub("None", 0, ranking)
+  ranking = gsub("BrkCmn", 1, ranking)
+  ranking = gsub("BrkFace", 2, ranking)
+  ranking = gsub("Stone", 3, ranking)
+  ranking = as.integer(ranking)
+  return(ranking)
+}
+cleaned_train_data$MasVnrType = convert_masonry_factor(train_data$MasVnrType)
+cleaned_test_data$MasVnrType = convert_masonry_factor(test_data$MasVnrType)
+
+#Convert Foundation Type text into ranking
+convert_foundation_factor <- function(Qual) {
+  ranking = ifelse(is.na(Qual), 2, Qual)
+  ranking = gsub("Slab", 1, ranking)
+  ranking = gsub("Stone", 2, ranking)
+  ranking = gsub("Wood", 2, ranking)
+  ranking = gsub("BrkTil", 2, ranking)
+  ranking = gsub("CBlock", 2, ranking)
+  ranking = gsub("PConc", 3, ranking)
+  ranking = as.integer(ranking)
+  return(ranking)
+}
+cleaned_train_data$Foundation = convert_foundation_factor(train_data$Foundation)
+cleaned_test_data$Foundation = convert_foundation_factor(test_data$Foundation)
+
+#Convert Electricity Type text into ranking
+convert_elec_factor <- function(Qual) {
+  ranking = ifelse(is.na(Qual), 4, Qual)
+  ranking = gsub("FuseP", 1, ranking)
+  ranking = gsub("FuseF", 2, ranking)
+  ranking = gsub("FuseA", 3, ranking)
+  ranking = gsub("SBrkr", 4, ranking)
+  ranking = gsub("Mix", 1, ranking)
+  ranking = as.integer(ranking)
+  return(ranking)
+}
+cleaned_train_data$Electrical = convert_elec_factor(train_data$Electrical)
+cleaned_test_data$Electrical = convert_elec_factor(test_data$Electrical)
+
 
 #Convert Functional text into ranking
 convert_functional_factor <- function(Qual) {
@@ -124,6 +207,11 @@ cleaned_test_data$ProxRail = ifelse((test_data$Condition1 == "RRAn") | (test_dat
 #Convert heating into gas or not
 cleaned_train_data$Heating = ifelse((train_data$Heating == "GasA" | train_data$Heating == "GasW" |train_data$Heating == "OthW"), 1, 0)
 cleaned_test_data$Heating = ifelse((test_data$Heating == "GasA" | test_data$Heating == "GasW" |test_data$Heating == "OthW"), 1, 0)
+
+#Convert garage into only carport
+cleaned_train_data$GarageType = ifelse(train_data$GarageType == "Carport", 1, 0)
+cleaned_test_data$GarageType = ifelse(test_data$GarageType == "Carport", 1, 0)
+
 
 #Convert basement type into ranking
 basement_factor = 6
@@ -157,10 +245,11 @@ cleaned_test_data$BasementQualFactor = ifelse(is.na(Test_Basement), 0, Test_Base
 
 #Combined living space feature
 #cleaned_train_data$WeightedTotLivArea = train_data$GrLivArea + (Train_Basement / basement_factor) * ifelse(is.na(train_data$TotalBsmtSF), 0, train_data$TotalBsmtSF)
+#cleaned_test_data$WeightedTotLivArea = test_data$GrLivArea + (test_Basement / basement_factor) * ifelse(is.na(test_data$TotalBsmtSF), 0, test_data$TotalBsmtSF)
 cleaned_train_data$TotLivArea = train_data$GrLivArea + train_data$TotalBsmtSF
 cleaned_test_data$TotLivArea = test_data$GrLivArea + ifelse(is.na(test_data$TotalBsmtSF), 0, test_data$TotalBsmtSF)
 #cleaned_train_data$WeightedBasementSF = (Train_Basement / basement_factor) * ifelse(is.na(train_data$TotalBsmtSF), 0, train_data$TotalBsmtSF)
-
+#cleaned_test_data$WeightedBasementSF = (test_Basement / basement_factor) * ifelse(is.na(test_data$TotalBsmtSF), 0, test_data$TotalBsmtSF)
 
 #Combining number of bathrooms above ground and basement
 cleaned_train_data$FullBath = train_data$FullBath + train_data$BsmtFullBath 
@@ -198,6 +287,11 @@ write.csv(cleaned_train_data, "./Data/cleaned_train.csv", row.names = FALSE)
 write.csv(cleaned_target, "./Data/cleaned_target.csv", row.names = FALSE)
 write.csv(cleaned_test_data, "./Data/cleaned_test.csv", row.names = FALSE)
 
+
+
+
+
+#==============================================================================
 #Check missing values as % for columns
 colMeans(is.na(train_data)) * 100
 colMeans(is.na(test_data)) * 100
