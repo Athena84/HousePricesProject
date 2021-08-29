@@ -1,3 +1,4 @@
+library(VIM)
 
 #Read the training data
 train_data <- read.csv("./Data/train.csv", stringsAsFactors = FALSE)
@@ -6,23 +7,32 @@ test_data <- read.csv("./Data/test.csv", stringsAsFactors = FALSE)
 #head(cleaned_train_data)
 #head(test_data)
 #summary(train_data)
-apply(train_data, 2, unique)
+#apply(train_data, 2, unique)
 
 
-selected_cols <- c("Id", "LotArea", "OverallQual", "GarageCars", "TotRmsAbvGrd", "OverallCond", "Fireplaces", "CentralAir", "Street")
+selected_cols <- c("Id", "LotArea", "LotFrontage", "OverallQual", "GarageCars", "TotRmsAbvGrd", "OverallCond", "Fireplaces", "CentralAir", "Street")
 cleaned_train_data <- train_data[selected_cols]
 cleaned_test_data <- test_data[selected_cols]
 cleaned_target <- train_data[c("Id", "SalePrice")]
 
-#Impute missing values in test data set
+#Impute Garage values in test data set
 cleaned_test_data$GarageCars =  ifelse(is.na(cleaned_test_data$GarageCars), 0, cleaned_test_data$GarageCars)
-#cleaned_train_data$LotFrontage =  ifelse(is.na(cleaned_train_data$LotFrontage ), 0, cleaned_train_data$LotFrontage)
-#cleaned_test_data$LotFrontage =  ifelse(is.na(cleaned_test_data$LotFrontage ), 0, cleaned_test_data$LotFrontage)
-#cleaned_test_data$TotalBsmtSF =ifelse(is.na(cleaned_test_data$TotalBsmtSF), 0, cleaned_test_data$TotalBsmtSF)
+
+#Impute LotFrontage in train and test data
+imputed_LotFrontage = kNN(data = cleaned_train_data, variable = "LotFrontage", dist_var = c("LotArea"), k = 34, useImputedDist = FALSE, trace = FALSE)$LotFrontage
+cleaned_train_data$LotFrontage =  imputed_LotFrontage
+imputed_LotFrontage = kNN(data = cleaned_test_data, variable = "LotFrontage", dist_var = c("LotArea"), k = 34, useImputedDist = FALSE)
+cleaned_test_data$LotFrontage =  imputed_LotFrontage
 
 #Combining month+year into single ordered feature
 cleaned_train_data$YrSold = train_data$YrSold + ((train_data$MoSold - 1) / 12)
 cleaned_test_data$YrSold = test_data$YrSold + ((test_data$MoSold - 1) / 12)
+
+#Convert year built into recency
+cleaned_train_data$AgeBuilt = 2011 - train_data$YearBuilt
+cleaned_test_data$AgeBuilt = 2011 - test_data$YearBuilt
+cleaned_train_data$AgeRemod = 2011 - train_data$YearBuilt
+cleaned_test_data$AgeRemod = 2011 - test_data$YearBuilt
 
 #Convert quality text into ranking
 convert_quality_factor <- function(Qual, imputed_Val) {
@@ -85,14 +95,14 @@ cleaned_test_data$Fence = convert_fence_factor(test_data$Fence)
 #Convert Slope quality text into ranking
 convert_slope_factor <- function(Qual) {
   ranking = ifelse(is.na(Qual), 0, Qual)
-  ranking = gsub("MnWw", 1, ranking)
-  ranking = gsub("GdWo", 2, ranking)
+  ranking = gsub("Gtl", 0, ranking)
+  ranking = gsub("Mod", 1, ranking)
+  ranking = gsub("Sev", 2, ranking)
   ranking = as.integer(ranking)
   return(ranking)
 }
 cleaned_train_data$LandSlope = convert_slope_factor(train_data$LandSlope)
 cleaned_test_data$LandSlope = convert_slope_factor(test_data$LandSlope)
-
 
 #Convert LotShape text into ranking
 convert_lotshape_factor <- function(Qual) {
@@ -132,8 +142,8 @@ convert_buildtype_factor <- function(Qual) {
   ranking = as.integer(ranking)
   return(ranking)
 }
-cleaned_train_data$MasVnrType = convert_buildtype_factor(train_data$MasVnrType)
-cleaned_test_data$MasVnrType = convert_buildtype_factor(test_data$MasVnrType)
+cleaned_train_data$BldgType = convert_buildtype_factor(train_data$BldgType)
+cleaned_test_data$BldgType = convert_buildtype_factor(test_data$BldgType)
 
 #Convert Masonry Type text into ranking
 convert_masonry_factor <- function(Qual) {
@@ -209,8 +219,8 @@ cleaned_train_data$Heating = ifelse((train_data$Heating == "GasA" | train_data$H
 cleaned_test_data$Heating = ifelse((test_data$Heating == "GasA" | test_data$Heating == "GasW" |test_data$Heating == "OthW"), 1, 0)
 
 #Convert garage into only carport
-cleaned_train_data$GarageType = ifelse(train_data$GarageType == "Carport", 1, 0)
-cleaned_test_data$GarageType = ifelse(test_data$GarageType == "Carport", 1, 0)
+#cleaned_train_data$GarageType = ifelse(train_data$GarageType == "Carport", 1, 0)
+#cleaned_test_data$GarageType = ifelse(test_data$GarageType == "Carport", 1, 0)
 
 
 #Convert basement type into ranking
@@ -277,16 +287,10 @@ cleaned_train_data$SaleCondition = factor(reorder(train_data$SaleCondition, trai
 cleaned_test_data$SaleCondition = as.integer(factor(test_data$SaleCondition, levels = levels(cleaned_train_data$SaleCondition)))
 cleaned_train_data$SaleCondition = as.integer(cleaned_train_data$SaleCondition)
 
-#Combined recency factor
-#remod_factor = 0.5
-#cleaned_train_data$Recency = 2011 - train_data$YearRemodAdd + remod_factor * (train_data$YearRemodAdd - train_data$YearBuilt)
-#cleaned_test_data$Recency = 2011 - test_data$YearRemodAdd + remod_factor * (test_data$YearRemodAdd - test_data$YearBuilt)
-
 #Save cleaned data set
 write.csv(cleaned_train_data, "./Data/cleaned_train.csv", row.names = FALSE)
 write.csv(cleaned_target, "./Data/cleaned_target.csv", row.names = FALSE)
 write.csv(cleaned_test_data, "./Data/cleaned_test.csv", row.names = FALSE)
-
 
 
 
