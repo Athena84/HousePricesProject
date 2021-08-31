@@ -8,17 +8,15 @@ selected_cols <- c("Id", "LotArea", "LotFrontage", "OverallQual", "GarageCars", 
 cleaned_train_data <- train_data[selected_cols]
 cleaned_test_data <- test_data[selected_cols]
 cleaned_target <- train_data[c("Id", "SalePrice")]
-cleaned_target$SalePrice <- log(cleaned_target$SalePrice)
 #head(cleaned_train_data)
 #head(test_data)
 #summary(train_data)
 #apply(train_data, 2, unique)
 
-
 #Impute Garage values in test data set
 cleaned_test_data$GarageCars =  ifelse(is.na(cleaned_test_data$GarageCars), 0, cleaned_test_data$GarageCars)
 
-#Imput MSZoning by mode
+#Impute MSZoning by mode
 modeMS = names(sort(table(cleaned_test_data$MSZoning), decreasing = TRUE)[1])
 cleaned_test_data$MSZoning =  ifelse(is.na(cleaned_test_data$MSZoning), modeMS, cleaned_test_data$MSZoning)
 
@@ -32,17 +30,17 @@ cleaned_test_data$LotFrontage =  imputed_LotFrontage
 cleaned_train_data$YrSold = train_data$YrSold + ((train_data$MoSold - 1) / 12)
 cleaned_test_data$YrSold = test_data$YrSold + ((test_data$MoSold - 1) / 12)
 
-#Convert year built into recency
+#Convert year built/remod into recency
 cleaned_train_data$AgeBuilt = 2011 - train_data$YearBuilt
 cleaned_test_data$AgeBuilt = 2011 - test_data$YearBuilt
-cleaned_train_data$AgeRemod = 2011 - train_data$YearBuilt
-cleaned_test_data$AgeRemod = 2011 - test_data$YearBuilt
+cleaned_train_data$AgeRemod = 2011 - train_data$YearRemodAdd
+cleaned_test_data$AgeRemod = 2011 - test_data$YearRemodAdd
 
 #Combined living space feature 
 cleaned_train_data$TotLivArea = train_data$GrLivArea + train_data$TotalBsmtSF
 cleaned_test_data$TotLivArea = test_data$GrLivArea + ifelse(is.na(test_data$TotalBsmtSF), 0, test_data$TotalBsmtSF)
 
-#Convert proximity features
+#Convert separate roximity features
 cleaned_train_data$ProxPos = ifelse((train_data$Condition1 == "PosA") | (train_data$Condition2 == "PosA") | (train_data$Condition1 == "PosN") | (train_data$Condition2 == "PosN"), 1, 0)
 cleaned_train_data$ProxRoad = ifelse((train_data$Condition1 == "Artery") | (train_data$Condition2 == "Artery") | (train_data$Condition1 == "Feedr") | (train_data$Condition2 == "Feedr"), 1, 0)
 cleaned_train_data$ProxRail = ifelse((train_data$Condition1 == "RRAn") | (train_data$Condition1 == "RRAe") | (train_data$Condition2 == "RRAn") | (train_data$Condition2 == "RRAe") | (train_data$Condition1 == "RRNn") | (train_data$Condition1 == "RRNe") | (train_data$Condition2 == "RRNn") | (train_data$Condition2 == "RRNe"), 1, 0)
@@ -81,14 +79,12 @@ basement_weight <- function(FinType1, FinType2, SF1, SF2, SF3) {
 }
 Train_Basement = basement_weight(train_data$BsmtFinType1, train_data$BsmtFinType2, train_data$BsmtFinSF1, train_data$BsmtFinSF2, train_data$BsmtUnfSF)
 Test_Basement = basement_weight(test_data$BsmtFinType1, test_data$BsmtFinType2, test_data$BsmtFinSF1, test_data$BsmtFinSF2, test_data$BsmtUnfSF)
-
 cleaned_train_data$BasementQualFactor = Train_Basement
 cleaned_test_data$BasementQualFactor = ifelse(is.na(Test_Basement), 0, Test_Basement)
 
 #Combining number of bathrooms above ground and basement
 cleaned_train_data$FullBath = train_data$FullBath + train_data$BsmtFullBath 
 cleaned_test_data$FullBath = test_data$FullBath + ifelse(is.na(test_data$BsmtFullBath), 1,  test_data$BsmtFullBath) 
-
 cleaned_train_data$HalfBath = train_data$HalfBath + train_data$BsmtHalfBath
 cleaned_test_data$HalfBath = test_data$HalfBath + ifelse(is.na(test_data$BsmtHalfBath), 1, test_data$BsmtHalfBath)
 

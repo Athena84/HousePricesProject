@@ -1,21 +1,31 @@
 library(car)
 
-#Read the training data
+#Read the data
 cleaned_train_data <- read.csv("./Data/cleaned_train.csv", stringsAsFactors = FALSE)
 cleaned_target <- read.csv("./Data/cleaned_target.csv", stringsAsFactors = FALSE)
 cleaned_test_data <- read.csv("./Data/cleaned_test.csv", stringsAsFactors = FALSE)
 
-#Normalize Living area values
-#mu <- mean(rbind(cleaned_train_data$TotLivArea, cleaned_test_data$TotLivArea))
-#sigma <- sd(rbind(cleaned_train_data$TotLivArea, cleaned_test_data$TotLivArea))
-#cleaned_train_data$TotLivArea = (cleaned_train_data$TotLivArea - mu) / sigma
-#cleaned_test_data$TotLivArea = (cleaned_test_data$TotLivArea - mu) / sigma
+#Normalize area values
+mu <- mean(rbind(cleaned_train_data$TotLivArea, cleaned_test_data$TotLivArea))
+sigma <- sd(rbind(cleaned_train_data$TotLivArea, cleaned_test_data$TotLivArea))
+cleaned_train_data$TotLivArea = (cleaned_train_data$TotLivArea - mu) / sigma
+cleaned_test_data$TotLivArea = (cleaned_test_data$TotLivArea - mu) / sigma
+
+mu <- mean(rbind(cleaned_train_data$LotArea, cleaned_test_data$LotArea))
+sigma <- sd(rbind(cleaned_train_data$LotArea, cleaned_test_data$LotArea))
+cleaned_train_data$LotArea = (cleaned_train_data$LotArea - mu) / sigma
+cleaned_test_data$LotArea = (cleaned_test_data$LotArea - mu) / sigma
+
+mu <- mean(rbind(cleaned_train_data$LotFrontage, cleaned_test_data$LotFrontage))
+sigma <- sd(rbind(cleaned_train_data$LotFrontage, cleaned_test_data$LotFrontage))
+cleaned_train_data$LotFrontage = (cleaned_train_data$LotFrontage - mu) / sigma
+cleaned_test_data$LotFrontage = (cleaned_test_data$LotFrontage - mu) / sigma
 
 #Taking ln of prices to remove skew
-#cleaned_target$SalePrice <- log(cleaned_target$SalePrice)
+cleaned_target$SalePrice <- log(cleaned_target$SalePrice)
 
-#Fitting linear model of saleprice by size and quality and taking residuals
-model_aggregate_quality = lm(cleaned_target$SalePrice ~ cleaned_train_data$TotLivArea + cleaned_train_data$OverallQual + cleaned_train_data$GarageCars)
+#Fitting linear model of saleprice by size, quality, condition and taking residuals
+model_aggregate_quality = lm(cleaned_target$SalePrice ~ cleaned_train_data$TotLivArea + cleaned_train_data$OverallQual + cleaned_train_data$OverallCond + cleaned_train_data$GarageCars)
 residuals <- cleaned_target$SalePrice - predict(model_aggregate_quality, cleaned_train_data)
 summary(model_aggregate_quality)
 
