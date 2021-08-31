@@ -1,3 +1,5 @@
+library(VIM)
+
 #Read the training data
 train_data <- read.csv("./Data/train.csv", stringsAsFactors = FALSE)
 test_data <- read.csv("./Data/test.csv", stringsAsFactors = FALSE)

@@ -1,4 +1,3 @@
-library(VIM)
 library(car)
 
 #Read the training data
@@ -6,18 +5,19 @@ cleaned_train_data <- read.csv("./Data/cleaned_train.csv", stringsAsFactors = FA
 cleaned_target <- read.csv("./Data/cleaned_target.csv", stringsAsFactors = FALSE)
 cleaned_test_data <- read.csv("./Data/cleaned_test.csv", stringsAsFactors = FALSE)
 
-
 #Normalize Living area values
-#cleaned_train_data$TotLivArea = (cleaned_train_data$TotLivArea - mean(cleaned_train_data$TotLivArea)) / st.dev(cleaned_train_data$TotLivArea)
-#cleaned_test_data$TotLivArea = (cleaned_test_data$TotLivArea - mean(cleaned_test_data$TotLivArea)) / st.dev(cleaned_test_data$TotLivArea)
+#mu <- mean(rbind(cleaned_train_data$TotLivArea, cleaned_test_data$TotLivArea))
+#sigma <- sd(rbind(cleaned_train_data$TotLivArea, cleaned_test_data$TotLivArea))
+#cleaned_train_data$TotLivArea = (cleaned_train_data$TotLivArea - mu) / sigma
+#cleaned_test_data$TotLivArea = (cleaned_test_data$TotLivArea - mu) / sigma
 
 #Taking ln of prices to remove skew
-cleaned_target$SalePrice <- log(cleaned_target$SalePrice)
+#cleaned_target$SalePrice <- log(cleaned_target$SalePrice)
 
 #Fitting linear model of saleprice by size and quality and taking residuals
 model_aggregate_quality = lm(cleaned_target$SalePrice ~ cleaned_train_data$TotLivArea + cleaned_train_data$OverallQual + cleaned_train_data$GarageCars)
 residuals <- cleaned_target$SalePrice - predict(model_aggregate_quality, cleaned_train_data)
-#summary(model_aggregate_quality)
+summary(model_aggregate_quality)
 
 
 #Convert quality text into rankings implied by the text
@@ -41,7 +41,7 @@ for (col in c("GarageQual", "PoolQC")) {
   cleaned_test_data[,col] <- convert_quality_factor(cleaned_test_data[,col], 0)
 }
 
-#Re-order nominal categorical values according to median of residuals of the basic linear model 
+#Re-order nominal categorical values according to order of median of residuals of the basic linear model 
 for (col in c("Neighborhood", "MSSubClass", "MSZoning", "SaleCondition")) {
   cleaned_train_data[,col] <- factor(reorder(cleaned_train_data[,col], residuals, median))
   cleaned_test_data[,col] <- as.integer(factor(cleaned_test_data[,col], levels = levels(cleaned_train_data[,col])))
