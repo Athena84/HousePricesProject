@@ -1,25 +1,26 @@
-library(VIM)
-library(car)
-
 #Read the training data
 train_data <- read.csv("./Data/train.csv", stringsAsFactors = FALSE)
 test_data <- read.csv("./Data/test.csv", stringsAsFactors = FALSE)
 
+selected_cols <- c("Id", "LotArea", "LotFrontage", "OverallQual", "GarageCars", "TotRmsAbvGrd", "OverallCond", "Fireplaces", "CentralAir", "Street", "KitchenQual", "ExterQual", "ExterCond", "HeatingQC", "GarageQual", "PoolQC", "BsmtCond", "Utilities", "Fence", "LandSlope", "LotShape", "BsmtExposure", "BldgType", "MasVnrType", "Foundation", "Electrical", "Functional", "Neighborhood", "MSSubClass", "MSZoning", "SaleCondition")
+cleaned_train_data <- train_data[selected_cols]
+cleaned_test_data <- test_data[selected_cols]
+cleaned_target <- train_data[c("Id", "SalePrice")]
+cleaned_target$SalePrice <- log(cleaned_target$SalePrice)
 #head(cleaned_train_data)
 #head(test_data)
 #summary(train_data)
 #apply(train_data, 2, unique)
 
 
-selected_cols <- c("Id", "LotArea", "LotFrontage", "OverallQual", "GarageCars", "TotRmsAbvGrd", "OverallCond", "Fireplaces", "CentralAir", "Street")
-cleaned_train_data <- train_data[selected_cols]
-cleaned_test_data <- test_data[selected_cols]
-cleaned_target <- train_data[c("Id", "SalePrice")]
-
 #Impute Garage values in test data set
 cleaned_test_data$GarageCars =  ifelse(is.na(cleaned_test_data$GarageCars), 0, cleaned_test_data$GarageCars)
 
-#Impute LotFrontage in train and test data
+#Imput MSZoning by mode
+modeMS = names(sort(table(cleaned_test_data$MSZoning), decreasing = TRUE)[1])
+cleaned_test_data$MSZoning =  ifelse(is.na(cleaned_test_data$MSZoning), modeMS, cleaned_test_data$MSZoning)
+
+#Impute LotFrontage in train and test data by kNN with k=sqrt(n)
 imputed_LotFrontage = kNN(data = cleaned_train_data, variable = "LotFrontage", dist_var = c("LotArea"), k = 34, useImputedDist = FALSE)$LotFrontage
 cleaned_train_data$LotFrontage =  imputed_LotFrontage
 imputed_LotFrontage = kNN(data = cleaned_test_data, variable = "LotFrontage", dist_var = c("LotArea"), k = 34, useImputedDist = FALSE)$LotFrontage
@@ -35,176 +36,9 @@ cleaned_test_data$AgeBuilt = 2011 - test_data$YearBuilt
 cleaned_train_data$AgeRemod = 2011 - train_data$YearBuilt
 cleaned_test_data$AgeRemod = 2011 - test_data$YearBuilt
 
-#Convert quality text into ranking
-convert_quality_factor <- function(Qual, imputed_Val) {
-  ranking = ifelse(is.na(Qual), imputed_Val, Qual)
-  ranking = gsub("Po", 1, ranking)
-  ranking = gsub("Fa", 2, ranking)
-  ranking = gsub("TA", 3, ranking)
-  ranking = gsub("Gd", 4, ranking)
-  ranking = gsub("Ex", 5, ranking)
-  ranking = as.integer(ranking)
-  return(ranking)
-}
-cleaned_train_data$KitchenQual = convert_quality_factor(train_data$KitchenQual, 1)
-cleaned_test_data$KitchenQual = convert_quality_factor(test_data$KitchenQual, 1)
-
-cleaned_train_data$ExterQual = convert_quality_factor(train_data$ExterQual, 1)
-cleaned_test_data$ExterQual = convert_quality_factor(test_data$ExterQual, 1)
-
-cleaned_train_data$ExterCond = convert_quality_factor(train_data$ExterCond, 1)
-cleaned_test_data$ExterCond = convert_quality_factor(test_data$ExterCond, 1)
-
-cleaned_train_data$HeatingQC = convert_quality_factor(train_data$HeatingQC, 1)
-cleaned_test_data$HeatingQC = convert_quality_factor(test_data$HeatingQC, 1)
-
-cleaned_train_data$GarageQual = convert_quality_factor(train_data$GarageQual, 0)
-cleaned_test_data$GarageQual = convert_quality_factor(test_data$GarageQual, 0)
-
-cleaned_train_data$PoolQC = convert_quality_factor(train_data$PoolQC, 0)
-cleaned_test_data$PoolQC = convert_quality_factor(test_data$PoolQC, 0)
-
-cleaned_train_data$BsmtCond = convert_quality_factor(train_data$BsmtCond, 1)
-cleaned_test_data$BsmtCond = convert_quality_factor(test_data$BsmtCond, 1)
-
-#Convert Utility text into ranking
-convert_utility_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 4, Qual)
-  ranking = gsub("AllPub", 4, ranking)
-  ranking = gsub("NoSewr", 3, ranking)
-  ranking = gsub("NoSeWa", 2, ranking)
-  ranking = gsub("ELO", 1, ranking)
-  ranking = as.integer(ranking)
-  return(ranking)
-}
-cleaned_train_data$Utilities = convert_utility_factor(train_data$Utilities)
-cleaned_test_data$Utilities = convert_utility_factor(test_data$Utilities)
-
-#Convert Fence quality text into ranking
-convert_fence_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 5, Qual)
-  ranking = gsub("MnWw", 1, ranking)
-  ranking = gsub("GdWo", 2, ranking)
-  ranking = gsub("MnPrv", 3, ranking)
-  ranking = gsub("GdPrv", 4, ranking)
-  ranking = as.integer(ranking)
-  return(ranking)
-}
-cleaned_train_data$Fence = convert_fence_factor(train_data$Fence)
-cleaned_test_data$Fence = convert_fence_factor(test_data$Fence)
-
-#Convert Slope quality text into ranking
-convert_slope_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 0, Qual)
-  ranking = gsub("Gtl", 0, ranking)
-  ranking = gsub("Mod", 1, ranking)
-  ranking = gsub("Sev", 2, ranking)
-  ranking = as.integer(ranking)
-  return(ranking)
-}
-cleaned_train_data$LandSlope = convert_slope_factor(train_data$LandSlope)
-cleaned_test_data$LandSlope = convert_slope_factor(test_data$LandSlope)
-
-#Convert LotShape text into ranking
-convert_lotshape_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 0, Qual)
-  ranking = gsub("Reg", 0, ranking)
-  ranking = gsub("IR1", 1, ranking)
-  ranking = gsub("IR2", 2, ranking)
-  ranking = gsub("IR3", 3, ranking)
-  ranking = as.integer(ranking)
-  return(ranking)
-}
-cleaned_train_data$LotShape  = convert_lotshape_factor(train_data$LotShape )
-cleaned_test_data$LotShape  = convert_lotshape_factor(test_data$LotShape )
-
-#Convert Basement exposure text into ranking
-convert_BsmtExp_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 0, Qual)
-  ranking = gsub("No", 1, ranking)
-  ranking = gsub("Mn", 2, ranking)
-  ranking = gsub("Av", 3, ranking)
-  ranking = gsub("Gd", 4, ranking)
-  ranking = as.integer(ranking)
-  return(ranking)
-}
-cleaned_train_data$BsmtExposure = convert_BsmtExp_factor (train_data$BsmtExposure)
-cleaned_test_data$BsmtExposure = convert_BsmtExp_factor (test_data$BsmtExposure)
-
-
-#Convert Building Type text into ranking
-convert_buildtype_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 0, Qual)
-  ranking = gsub("Twnhs", 4, ranking)
-  ranking = gsub("TwnhsE", 2, ranking)
-  ranking = gsub("Duplex", 3, ranking)
-  ranking = gsub("2fmCon", 1, ranking)
-  ranking = gsub("1Fam", 5, ranking)
-  ranking = as.integer(ranking)
-  return(ranking)
-}
-cleaned_train_data$BldgType = convert_buildtype_factor(train_data$BldgType)
-cleaned_test_data$BldgType = convert_buildtype_factor(test_data$BldgType)
-
-#Convert Masonry Type text into ranking
-convert_masonry_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 0, Qual)
-  ranking = gsub("None", 0, ranking)
-  ranking = gsub("BrkCmn", 1, ranking)
-  ranking = gsub("BrkFace", 2, ranking)
-  ranking = gsub("Stone", 3, ranking)
-  ranking = as.integer(ranking)
-  return(ranking)
-}
-cleaned_train_data$MasVnrType = convert_masonry_factor(train_data$MasVnrType)
-cleaned_test_data$MasVnrType = convert_masonry_factor(test_data$MasVnrType)
-
-#Convert Foundation Type text into ranking
-convert_foundation_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 2, Qual)
-  ranking = gsub("Slab", 1, ranking)
-  ranking = gsub("Stone", 2, ranking)
-  ranking = gsub("Wood", 2, ranking)
-  ranking = gsub("BrkTil", 2, ranking)
-  ranking = gsub("CBlock", 2, ranking)
-  ranking = gsub("PConc", 3, ranking)
-  ranking = as.integer(ranking)
-  return(ranking)
-}
-cleaned_train_data$Foundation = convert_foundation_factor(train_data$Foundation)
-cleaned_test_data$Foundation = convert_foundation_factor(test_data$Foundation)
-
-#Convert Electricity Type text into ranking
-convert_elec_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 4, Qual)
-  ranking = gsub("FuseP", 1, ranking)
-  ranking = gsub("FuseF", 2, ranking)
-  ranking = gsub("FuseA", 3, ranking)
-  ranking = gsub("SBrkr", 4, ranking)
-  ranking = gsub("Mix", 1, ranking)
-  ranking = as.integer(ranking)
-  return(ranking)
-}
-cleaned_train_data$Electrical = convert_elec_factor(train_data$Electrical)
-cleaned_test_data$Electrical = convert_elec_factor(test_data$Electrical)
-
-
-#Convert Functional text into ranking
-convert_functional_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 1, Qual)
-  ranking = gsub("Sal", 0, ranking)
-  ranking = gsub("Sev", 0, ranking)
-  ranking = gsub("Maj1", 1, ranking)
-  ranking = gsub("Maj2", 1, ranking)
-  ranking = gsub("Mod", 2, ranking)
-  ranking = gsub("Min1", 3, ranking)
-  ranking = gsub("Min2", 3, ranking)
-  ranking = gsub("Typ", 4, ranking)
-  ranking = as.integer(ranking)
-  return(ranking)
-}
-cleaned_train_data$Functional = convert_functional_factor(train_data$Functional)
-cleaned_test_data$Functional = convert_functional_factor(test_data$Functional)
+#Combined living space feature 
+cleaned_train_data$TotLivArea = train_data$GrLivArea + train_data$TotalBsmtSF
+cleaned_test_data$TotLivArea = test_data$GrLivArea + ifelse(is.na(test_data$TotalBsmtSF), 0, test_data$TotalBsmtSF)
 
 #Convert proximity features
 cleaned_train_data$ProxPos = ifelse((train_data$Condition1 == "PosA") | (train_data$Condition2 == "PosA") | (train_data$Condition1 == "PosN") | (train_data$Condition2 == "PosN"), 1, 0)
@@ -218,11 +52,6 @@ cleaned_test_data$ProxRail = ifelse((test_data$Condition1 == "RRAn") | (test_dat
 #Convert heating into gas or not
 cleaned_train_data$Heating = ifelse((train_data$Heating == "GasA" | train_data$Heating == "GasW" |train_data$Heating == "OthW"), 1, 0)
 cleaned_test_data$Heating = ifelse((test_data$Heating == "GasA" | test_data$Heating == "GasW" |test_data$Heating == "OthW"), 1, 0)
-
-#Convert garage into only carport
-#cleaned_train_data$GarageType = ifelse(train_data$GarageType == "Carport", 1, 0)
-#cleaned_test_data$GarageType = ifelse(test_data$GarageType == "Carport", 1, 0)
-
 
 #Convert basement type into ranking
 basement_factor = 6
@@ -254,14 +83,6 @@ Test_Basement = basement_weight(test_data$BsmtFinType1, test_data$BsmtFinType2, 
 cleaned_train_data$BasementQualFactor = Train_Basement
 cleaned_test_data$BasementQualFactor = ifelse(is.na(Test_Basement), 0, Test_Basement)
 
-#Combined living space feature
-#cleaned_train_data$WeightedTotLivArea = train_data$GrLivArea + (Train_Basement / basement_factor) * ifelse(is.na(train_data$TotalBsmtSF), 0, train_data$TotalBsmtSF)
-#cleaned_test_data$WeightedTotLivArea = test_data$GrLivArea + (test_Basement / basement_factor) * ifelse(is.na(test_data$TotalBsmtSF), 0, test_data$TotalBsmtSF)
-cleaned_train_data$TotLivArea = train_data$GrLivArea + train_data$TotalBsmtSF
-cleaned_test_data$TotLivArea = test_data$GrLivArea + ifelse(is.na(test_data$TotalBsmtSF), 0, test_data$TotalBsmtSF)
-#cleaned_train_data$WeightedBasementSF = (Train_Basement / basement_factor) * ifelse(is.na(train_data$TotalBsmtSF), 0, train_data$TotalBsmtSF)
-#cleaned_test_data$WeightedBasementSF = (test_Basement / basement_factor) * ifelse(is.na(test_data$TotalBsmtSF), 0, test_data$TotalBsmtSF)
-
 #Combining number of bathrooms above ground and basement
 cleaned_train_data$FullBath = train_data$FullBath + train_data$BsmtFullBath 
 cleaned_test_data$FullBath = test_data$FullBath + ifelse(is.na(test_data$BsmtFullBath), 1,  test_data$BsmtFullBath) 
@@ -272,30 +93,6 @@ cleaned_test_data$HalfBath = test_data$HalfBath + ifelse(is.na(test_data$BsmtHal
 #Combined enclosed porch feature
 cleaned_train_data$PorchSF = train_data$EnclosedPorch + train_data$X3SsnPorch + train_data$ScreenPorch
 cleaned_test_data$PorchSF = test_data$EnclosedPorch + test_data$X3SsnPorch + test_data$ScreenPorch
-
-#Fitting linear model of saleprice by size and quality and taking residuals
-model_aggregate_quality = lm(cleaned_target$SalePrice ~ cleaned_train_data$TotLivArea + train_data$OverallQual)
-residuals <- cleaned_target$SalePrice - predict(model_aggregate_quality, train_data)
-
-#Store Neighborhoods as integers ordered by median of residuals
-cleaned_train_data$Neighborhood = factor(reorder(train_data$Neighborhood, residuals, median))
-cleaned_test_data$Neighborhood = as.integer(factor(test_data$Neighborhood, levels = levels(cleaned_train_data$Neighborhood)))
-cleaned_train_data$Neighborhood = as.integer(cleaned_train_data$Neighborhood)
-
-#Store MSSubClass as integers ordered by median of residuals
-cleaned_train_data$MSSubClass = factor(reorder(train_data$MSSubClass, residuals, median))
-cleaned_test_data$MSSubClass = as.integer(factor(test_data$MSSubClass, levels = c(levels(cleaned_train_data$MSSubClass), 150)))
-cleaned_train_data$MSSubClass = as.integer(cleaned_train_data$MSSubClass)
-
-#Store MSZoning as integers ordered by median of residuals
-cleaned_train_data$MSZoning = factor(reorder(train_data$MSZoning, residuals, median))
-cleaned_test_data$MSZoning = ifelse(is.na(test_data$MSZoning), 0, as.integer(factor(test_data$MSZoning, levels = c(levels(cleaned_train_data$MSZoning), 150))))
-cleaned_train_data$MSZoning = as.integer(cleaned_train_data$MSZoning)
-
-#Store SaleCondition as integers ordered by median of residuals
-cleaned_train_data$SaleCondition = factor(reorder(train_data$SaleCondition, residuals, median))
-cleaned_test_data$SaleCondition = as.integer(factor(test_data$SaleCondition, levels = levels(cleaned_train_data$SaleCondition)))
-cleaned_train_data$SaleCondition = as.integer(cleaned_train_data$SaleCondition)
 
 #Save cleaned data set
 write.csv(cleaned_train_data, "./Data/cleaned_train.csv", row.names = FALSE)
@@ -310,33 +107,3 @@ colMeans(is.na(train_data)) * 100
 colMeans(is.na(test_data)) * 100
 colMeans(is.na(cleaned_train_data)) * 100
 colMeans(is.na(cleaned_test_data)) * 100
-
-
-#Comparing living space metrics
-
-model_above = lm(SalePrice ~ GrLivArea, data = train_data)
-summary(model_above)
-
-model_basement = lm(SalePrice ~ TotalBsmtSF, data = train_data)
-summary(model_basement)
-
-model_combined = lm(SalePrice ~ GrLivArea + TotalBsmtSF, data = train_data)
-summary(model_combined)
-
-model_aggregate = lm(train_data$SalePrice ~ cleaned_train_data$TotLivArea)
-summary(model_aggregate)
-
-model_aggregate_quality = lm(train_data$SalePrice ~ cleaned_train_data$TotLivArea + train_data$OverallQual)
-summary(model_aggregate_quality)
-
-model_weighted_aggregate = lm(train_data$SalePrice ~ cleaned_train_data$WeightedTotLivArea)
-summary(model_weighted_aggregate)
-
-model_weighted_aggregate_quality = lm(train_data$SalePrice ~ cleaned_train_data$WeightedTotLivArea + train_data$OverallQual)
-summary(model_weighted_aggregate_quality)
-
-model_combined_1quality = lm(train_data$SalePrice ~ train_data$GrLivArea + train_data$TotalBsmtSF + Train_Basement)
-summary(model_combined_1quality)
-
-model_combined_2quality = lm(train_data$SalePrice ~ train_data$GrLivArea + train_data$TotalBsmtSF + Train_Basement + train_data$OverallQual)
-summary(model_combined_2quality)

@@ -15,17 +15,32 @@ cleaned_train_data <- read.csv("./Data/cleaned_train.csv", stringsAsFactors = TR
 cleaned_test_data <- read.csv("./Data/cleaned_test.csv", stringsAsFactors = TRUE)
 cleaned_target <- read.csv("./Data/cleaned_target.csv", stringsAsFactors = TRUE)
 cleaned_train_data$SalePrice = cleaned_target$SalePrice
+cleaned_train_data$LNSalePrice = log(cleaned_target$SalePrice)
 
 #Fitting linear model of saleprice by size and quality and taking residuals
-model_aggregate_quality = lm(cleaned_target$SalePrice ~ cleaned_train_data$TotLivArea + cleaned_train_data$OverallQual)
-residuals <- cleaned_target$SalePrice - predict(model_aggregate_quality, cleaned_train_data)
+model_aggregate_quality = lm(cleaned_target$SalePrice ~ cleaned_train_data$TotLivArea + cleaned_train_data$OverallQual + cleaned_train_data$GarageCars)
+cleaned_train_data$residuals <- cleaned_target$SalePrice - predict(model_aggregate_quality, cleaned_train_data)
 
 
 #Distribution of house prices
 Density_Prices <- ggplot(data = cleaned_train_data, aes(x = SalePrice)) +
-  geom_density()
-  
+  geom_density() +
+  scale_x_continuous(labels = label_number(suffix = " k", scale = 1e-3)) +
+  labs(title="Distribution of house prices", x ="House prices ($)", y = "Density") +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
 Density_Prices
+
+Density_LogPrices <- ggplot(data = cleaned_train_data, aes(x = LNSalePrice)) +
+  geom_density() +
+  labs(title="Distribution of log of house prices", x ="Log of house prices ($)", y = "Density") +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+Density_LogPrices
+
+
 
 #Boxplots house prices grouped for categorical
 
@@ -114,7 +129,7 @@ ProxPos_boxplot
 
 #Works if data as integers (such as toward model)
 cleaned_train_data$Neighborhood = as.factor(cleaned_train_data$Neighborhood)
-Neighborhood_boxplot <- ggplot(cleaned_train_data, aes(x = cleaned_train_data$Neighborhood, y = residuals)) +
+Neighborhood_boxplot <- ggplot(cleaned_train_data, aes(x = Neighborhood, y = residuals)) +
   geom_boxplot()
 Neighborhood_boxplot
 
