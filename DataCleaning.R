@@ -1,4 +1,5 @@
 library(VIM)
+library(car)
 
 #Read the training data
 train_data <- read.csv("./Data/train.csv", stringsAsFactors = FALSE)
@@ -19,9 +20,9 @@ cleaned_target <- train_data[c("Id", "SalePrice")]
 cleaned_test_data$GarageCars =  ifelse(is.na(cleaned_test_data$GarageCars), 0, cleaned_test_data$GarageCars)
 
 #Impute LotFrontage in train and test data
-imputed_LotFrontage = kNN(data = cleaned_train_data, variable = "LotFrontage", dist_var = c("LotArea"), k = 34, useImputedDist = FALSE, trace = FALSE)$LotFrontage
+imputed_LotFrontage = kNN(data = cleaned_train_data, variable = "LotFrontage", dist_var = c("LotArea"), k = 34, useImputedDist = FALSE)$LotFrontage
 cleaned_train_data$LotFrontage =  imputed_LotFrontage
-imputed_LotFrontage = kNN(data = cleaned_test_data, variable = "LotFrontage", dist_var = c("LotArea"), k = 34, useImputedDist = FALSE)
+imputed_LotFrontage = kNN(data = cleaned_test_data, variable = "LotFrontage", dist_var = c("LotArea"), k = 34, useImputedDist = FALSE)$LotFrontage
 cleaned_test_data$LotFrontage =  imputed_LotFrontage
 
 #Combining month+year into single ordered feature
@@ -272,18 +273,27 @@ cleaned_test_data$HalfBath = test_data$HalfBath + ifelse(is.na(test_data$BsmtHal
 cleaned_train_data$PorchSF = train_data$EnclosedPorch + train_data$X3SsnPorch + train_data$ScreenPorch
 cleaned_test_data$PorchSF = test_data$EnclosedPorch + test_data$X3SsnPorch + test_data$ScreenPorch
 
-#Store Neighborhoods as integers ordered by median saleprice
-cleaned_train_data$Neighborhood = factor(reorder(train_data$Neighborhood, train_data$SalePrice, median))
+#Fitting linear model of saleprice by size and quality and taking residuals
+model_aggregate_quality = lm(cleaned_target$SalePrice ~ cleaned_train_data$TotLivArea + train_data$OverallQual)
+residuals <- cleaned_target$SalePrice - predict(model_aggregate_quality, train_data)
+
+#Store Neighborhoods as integers ordered by median of residuals
+cleaned_train_data$Neighborhood = factor(reorder(train_data$Neighborhood, residuals, median))
 cleaned_test_data$Neighborhood = as.integer(factor(test_data$Neighborhood, levels = levels(cleaned_train_data$Neighborhood)))
 cleaned_train_data$Neighborhood = as.integer(cleaned_train_data$Neighborhood)
 
-#Store MSSubClass as integers ordered by median saleprice
-cleaned_train_data$MSSubClass = factor(reorder(train_data$MSSubClass, train_data$SalePrice, median))
+#Store MSSubClass as integers ordered by median of residuals
+cleaned_train_data$MSSubClass = factor(reorder(train_data$MSSubClass, residuals, median))
 cleaned_test_data$MSSubClass = as.integer(factor(test_data$MSSubClass, levels = c(levels(cleaned_train_data$MSSubClass), 150)))
 cleaned_train_data$MSSubClass = as.integer(cleaned_train_data$MSSubClass)
 
-#Store SaleCondition as integers ordered by median saleprice
-cleaned_train_data$SaleCondition = factor(reorder(train_data$SaleCondition, train_data$SalePrice, median))
+#Store MSZoning as integers ordered by median of residuals
+cleaned_train_data$MSZoning = factor(reorder(train_data$MSZoning, residuals, median))
+cleaned_test_data$MSZoning = ifelse(is.na(test_data$MSZoning), 0, as.integer(factor(test_data$MSZoning, levels = c(levels(cleaned_train_data$MSZoning), 150))))
+cleaned_train_data$MSZoning = as.integer(cleaned_train_data$MSZoning)
+
+#Store SaleCondition as integers ordered by median of residuals
+cleaned_train_data$SaleCondition = factor(reorder(train_data$SaleCondition, residuals, median))
 cleaned_test_data$SaleCondition = as.integer(factor(test_data$SaleCondition, levels = levels(cleaned_train_data$SaleCondition)))
 cleaned_train_data$SaleCondition = as.integer(cleaned_train_data$SaleCondition)
 
@@ -291,7 +301,6 @@ cleaned_train_data$SaleCondition = as.integer(cleaned_train_data$SaleCondition)
 write.csv(cleaned_train_data, "./Data/cleaned_train.csv", row.names = FALSE)
 write.csv(cleaned_target, "./Data/cleaned_target.csv", row.names = FALSE)
 write.csv(cleaned_test_data, "./Data/cleaned_test.csv", row.names = FALSE)
-
 
 
 
@@ -304,7 +313,7 @@ colMeans(is.na(cleaned_test_data)) * 100
 
 
 #Comparing living space metrics
-library(car)
+
 model_above = lm(SalePrice ~ GrLivArea, data = train_data)
 summary(model_above)
 

@@ -2,6 +2,7 @@
 library(tidyverse)
 library(ggthemes)
 library(scales)
+library(car)
 
 old_theme <- theme_set(theme_linedraw() +
                          theme(plot.title = element_text(size = 16, face = "bold")) +
@@ -14,6 +15,11 @@ cleaned_train_data <- read.csv("./Data/cleaned_train.csv", stringsAsFactors = TR
 cleaned_test_data <- read.csv("./Data/cleaned_test.csv", stringsAsFactors = TRUE)
 cleaned_target <- read.csv("./Data/cleaned_target.csv", stringsAsFactors = TRUE)
 cleaned_train_data$SalePrice = cleaned_target$SalePrice
+
+#Fitting linear model of saleprice by size and quality and taking residuals
+model_aggregate_quality = lm(cleaned_target$SalePrice ~ cleaned_train_data$TotLivArea + cleaned_train_data$OverallQual)
+residuals <- cleaned_target$SalePrice - predict(model_aggregate_quality, cleaned_train_data)
+
 
 #Distribution of house prices
 Density_Prices <- ggplot(data = cleaned_train_data, aes(x = SalePrice)) +
@@ -69,6 +75,11 @@ GarageType_boxplot <- ggplot(data = cleaned_train_data, aes(x = GarageType, y = 
   geom_boxplot()
 GarageType_boxplot
 
+cleaned_train_data$MSZoning = as.factor(cleaned_train_data$MSZoning)
+MSZoning_boxplot <- ggplot(data = cleaned_train_data, aes(x = MSZoning, y = SalePrice)) +
+  geom_boxplot()
+MSZoning_boxplot
+
 #Works if data still as names:
 cleaned_train_data$MSSubClass = as.factor(cleaned_train_data$MSSubClass)
 MSSubClass_boxplot <- ggplot(data = cleaned_train_data, aes(x = reorder(MSSubClass, SalePrice, median), y = SalePrice)) +
@@ -103,7 +114,7 @@ ProxPos_boxplot
 
 #Works if data as integers (such as toward model)
 cleaned_train_data$Neighborhood = as.factor(cleaned_train_data$Neighborhood)
-Neighborhood_boxplot <- ggplot(data = cleaned_train_data, aes(x = Neighborhood, y = SalePrice)) +
+Neighborhood_boxplot <- ggplot(cleaned_train_data, aes(x = cleaned_train_data$Neighborhood, y = residuals)) +
   geom_boxplot()
 Neighborhood_boxplot
 
