@@ -16,6 +16,11 @@ cleaned_target <- train_data[c("Id", "SalePrice")]
 #Impute Garage values in test data set
 cleaned_test_data$GarageCars =  ifelse(is.na(cleaned_test_data$GarageCars), 0, cleaned_test_data$GarageCars)
 
+#Impute Utilities values in test data set
+#modeUtil = names(sort(table(cleaned_test_data$Utilities), decreasing = TRUE)[1])
+cleaned_test_data$Utilities =  ifelse(is.na(cleaned_test_data$Utilities), "NoSeWa", cleaned_test_data$Utilities)
+
+
 #Impute MSZoning by mode
 modeMS = names(sort(table(cleaned_test_data$MSZoning), decreasing = TRUE)[1])
 cleaned_test_data$MSZoning =  ifelse(is.na(cleaned_test_data$MSZoning), modeMS, cleaned_test_data$MSZoning)
@@ -27,8 +32,8 @@ cleaned_train_data$LotFrontage =  imputed_LotSizes$LotFrontage[1:1460]
 cleaned_test_data$LotFrontage =  imputed_LotSizes$LotFrontage[1461:2919]
 
 #Combining month+year into single ordered feature
-cleaned_train_data$YrSold = train_data$YrSold + ((train_data$MoSold - 1) / 12)
-cleaned_test_data$YrSold = test_data$YrSold + ((test_data$MoSold - 1) / 12)
+cleaned_train_data$YrSold = train_data$YrSold + ((train_data$MoSold - 1) / 12) - 2005
+cleaned_test_data$YrSold = test_data$YrSold + ((test_data$MoSold - 1) / 12) - 2005
 
 #Convert year built/remod into recency
 cleaned_train_data$AgeBuilt = 2011 - train_data$YearBuilt
