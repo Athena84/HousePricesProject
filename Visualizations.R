@@ -36,7 +36,7 @@ Density_Prices <- ggplot(data = cleaned_train_data, aes(x = SalePrice)) +
         axis.ticks.y = element_blank())
 Density_Prices
 
-Density_LogPrices <- ggplot(data = cleaned_train_data, aes(x = LNSalePrice)) +
+Density_LogPrices <- ggplot(data = prepped_train_data, aes(x = LNSalePrice)) +
   geom_density() +
   labs(title="Distribution of log of house prices", x ="Log of house prices ($)", y = "Density") +
   theme(axis.title.y = element_blank(),
@@ -46,35 +46,45 @@ Density_LogPrices
 
 
 #Correlation plots
+selected_cols <- c("SalePrice","TotLivArea", "LotArea", "LotFrontage", "OverallQual", "GarageCars", "TotRmsAbvGrd", "OverallCond", "Fireplaces", "KitchenQual", "ExterQual", "ExterCond", "HeatingQC", "GarageQual", "PoolQC", "BsmtCond", "Utilities", "Fence", "LandSlope", "LotShape", "BsmtExposure", "BldgType", "MasVnrType", "Foundation", "Electrical", "Functional", "Neighborhood", "MSSubClass", "MSZoning", "SaleCondition")
+correlations_Price <- data.frame(correlations = abs(cor(cleaned_train_data[selected_cols], method = "spearman")[1,]))
+correlations_Price$features <- rownames(correlations_Price)
+positions <- arrange(correlations_Price, desc(correlations))$features[2:15]
+correlations_Price_plot <- ggplot(data = correlations_Price) +
+  labs(title="Ordered Spearman correlation to house prices", x ="", y = "Correlation") +
+  geom_bar(aes(x = features, y= correlations),stat="identity") + 
+  scale_x_discrete(limits = positions) + 
+  scale_y_continuous(labels = label_number(suffix = "%", scale = 1e2)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+correlations_Price_plot
+
+
 selected_cols <- c("LNSalePrice","TotLivArea", "LotArea", "LotFrontage", "OverallQual", "GarageCars", "TotRmsAbvGrd", "OverallCond", "Fireplaces", "KitchenQual", "ExterQual", "ExterCond", "HeatingQC", "GarageQual", "PoolQC", "BsmtCond", "Utilities", "Fence", "LandSlope", "LotShape", "BsmtExposure", "BldgType", "MasVnrType", "Foundation", "Electrical", "Functional", "Neighborhood", "MSSubClass", "MSZoning", "SaleCondition")
-correlations_LNPrice <- data.frame(correlations = cor(prepped_train_data[selected_cols], method = "spearman")[1,])
+correlations_LNPrice <- data.frame(correlations = abs(cor(prepped_train_data[selected_cols], method = "spearman")[1,]))
 correlations_LNPrice$features <- rownames(correlations_LNPrice)
-correlations_LNPrice <- arrange(correlations_LNPrice, desc(abs(correlations)))
-correlations_LNPrice_plot <- arrange(correlations_LNPrice, desc(abs(correlations))) %>%
-  ggplot(data = .) +
-  geom_bar(aes(x = features, y= correlations),stat="identity")
+positions <- arrange(correlations_LNPrice, desc(correlations))$features[2:15]
+correlations_LNPrice_plot <- ggplot(data = correlations_LNPrice) +
+  labs(title="Ordered Spearman correlation to log of house prices", x ="", y = "Correlation") +
+  geom_bar(aes(x = features, y= correlations),stat="identity") + 
+  scale_x_discrete(limits = positions) + 
+  scale_y_continuous(labels = label_number(suffix = "%", scale = 1e2)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 correlations_LNPrice_plot
-
 
 selected_cols <- c("residuals","LotArea", "LotFrontage", "TotRmsAbvGrd", "Fireplaces", "KitchenQual", "ExterQual", "ExterCond", "HeatingQC", "GarageQual", "PoolQC", "BsmtCond", "Utilities", "Fence", "LandSlope", "LotShape", "BsmtExposure", "BldgType", "MasVnrType", "Foundation", "Electrical", "Functional", "Neighborhood", "MSSubClass", "MSZoning", "SaleCondition")
-correlations_residuals <- sort(abs(cor(prepped_train_data[selected_cols], method = "spearman")[1,2:25]), decreasing = TRUE)
+correlations_residuals <- data.frame(correlations = abs(cor(prepped_train_data[selected_cols], method = "spearman")[1,]))
+correlations_residuals$features <- rownames(correlations_residuals)
+positions <- arrange(correlations_residuals, desc(correlations))$features[2:15]
+correlations_residuals_plot <- ggplot(data = correlations_residuals) +
+  labs(title="Ordered Spearman correlation to residuals of basic model", x ="", y = "Correlation") +
+  geom_bar(aes(x = features, y= correlations),stat="identity") + 
+  scale_x_discrete(limits = positions) + 
+  scale_y_continuous(labels = label_number(suffix = "%", scale = 1e2)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-
-correlations_LNPrice_plot
-correlations_LNPrice
-
-
-
-selected_cols <- c("LNSalePrice","TotLivArea", "LotArea", "LotFrontage", "OverallQual", "GarageCars", "TotRmsAbvGrd", "OverallCond", "Fireplaces", "KitchenQual", "ExterQual", "ExterCond", "HeatingQC", "GarageQual", "PoolQC", "BsmtCond", "Utilities", "Fence", "LandSlope", "LotShape", "BsmtExposure", "BldgType", "MasVnrType", "Foundation", "Electrical", "Functional", "Neighborhood", "MSSubClass", "MSZoning", "SaleCondition")
-correlations_LNPrice <- sort(abs(cor(prepped_train_data[selected_cols], method = "spearman")[2:25,1]), decreasing = TRUE)
-correlations <- data.frame(matrix(data = correlations_LNPrice, nrow = 1))
-colnames(correlations) = names(correlations_LNPrice)
-correlations_LNPrice_plot <- ggplot(data = correlations) +
-  geom_bar()
-
-correlations_LNPrice_plot
-correlations
+correlations_residuals_plot
 
 #Neighborhood plots
 cleaned_train_data$Neighborhood = as.factor(cleaned_train_data$Neighborhood)

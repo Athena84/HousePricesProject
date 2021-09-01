@@ -5,29 +5,38 @@ cleaned_train_data <- read.csv("./Data/cleaned_train.csv", stringsAsFactors = FA
 cleaned_target <- read.csv("./Data/cleaned_target.csv", stringsAsFactors = FALSE)
 cleaned_test_data <- read.csv("./Data/cleaned_test.csv", stringsAsFactors = FALSE)
 
-#Normalize area values
-mu <- mean(rbind(cleaned_train_data$TotLivArea, cleaned_test_data$TotLivArea))
-sigma <- sd(rbind(cleaned_train_data$TotLivArea, cleaned_test_data$TotLivArea))
+
+#Normalize area values for combination of train and test data
+mu <- mean(c(cleaned_train_data$TotLivArea, cleaned_test_data$TotLivArea))
+sigma <- sd(c(cleaned_train_data$TotLivArea, cleaned_test_data$TotLivArea))
 cleaned_train_data$TotLivArea = (cleaned_train_data$TotLivArea - mu) / sigma
 cleaned_test_data$TotLivArea = (cleaned_test_data$TotLivArea - mu) / sigma
 
-mu <- mean(rbind(cleaned_train_data$LotArea, cleaned_test_data$LotArea))
-sigma <- sd(rbind(cleaned_train_data$LotArea, cleaned_test_data$LotArea))
+mu <- mean(c(cleaned_train_data$LotArea, cleaned_test_data$LotArea))
+sigma <- sd(c(cleaned_train_data$LotArea, cleaned_test_data$LotArea))
 cleaned_train_data$LotArea = (cleaned_train_data$LotArea - mu) / sigma
 cleaned_test_data$LotArea = (cleaned_test_data$LotArea - mu) / sigma
 
-mu <- mean(rbind(cleaned_train_data$LotFrontage, cleaned_test_data$LotFrontage))
-sigma <- sd(rbind(cleaned_train_data$LotFrontage, cleaned_test_data$LotFrontage))
+mu <- mean(c(cleaned_train_data$LotFrontage, cleaned_test_data$LotFrontage))
+sigma <- sd(c(cleaned_train_data$LotFrontage, cleaned_test_data$LotFrontage))
 cleaned_train_data$LotFrontage = (cleaned_train_data$LotFrontage - mu) / sigma
 cleaned_test_data$LotFrontage = (cleaned_test_data$LotFrontage - mu) / sigma
 
-#Taking ln of prices to remove skew
-cleaned_target$SalePrice <- log(cleaned_target$SalePrice)
+#Taking ln of prices to remove skew and adding it to train df for modelling
+cleaned_train_data$SalePrice <- log(cleaned_target$SalePrice)
 
 #Fitting linear model of saleprice by size, quality, condition and taking residuals
-model_aggregate_quality = lm(cleaned_target$SalePrice ~ cleaned_train_data$TotLivArea + cleaned_train_data$OverallQual + cleaned_train_data$OverallCond + cleaned_train_data$GarageCars)
-residuals <- cleaned_target$SalePrice - predict(model_aggregate_quality, cleaned_train_data)
-summary(model_aggregate_quality)
+model_base = lm(SalePrice ~ TotLivArea + OverallQual, data = cleaned_train_data)
+residuals <- cleaned_train_data$SalePrice - predict(model_base, cleaned_train_data)
+#summary(model_base)
+#plot(model_base)
+#influencePlot(model_base)
+#vif(model_base)
+#avPlots(model_base)
+#confint(model_base)
+
+#Calculating prediction base model on test date (XGBoost prediction on residuals will be added to this later)
+pred_base = data.frame(predictions = predict(model_base, cleaned_test_data))
 
 
 #Convert quality text into rankings implied by the text
@@ -57,7 +66,6 @@ for (col in c("Neighborhood", "MSSubClass", "MSZoning", "SaleCondition", "Utilit
   cleaned_test_data[,col] <- as.integer(factor(cleaned_test_data[,col], levels = levels(cleaned_train_data[,col])))
   cleaned_train_data[,col] <- as.integer(cleaned_train_data[,col])
 }
-cleaned_train_data$MasVnrType
 
 #Re-order nominal categorical values manually
 
@@ -175,10 +183,16 @@ cleaned_train_data$Functional = convert_functional_factor(cleaned_train_data$Fun
 cleaned_test_data$Functional = convert_functional_factor(cleaned_test_data$Functional)
 
 
+#For XGBoost, leave residuals of trained model as target for train data
+cleaned_target$SalePrice = residuals
+#Remove target column from data set for convenience in Python set up
+cleaned_train_data <- subset(cleaned_train_data, select = -c(SalePrice))
+
 #Save prepped data set for XGB
 write.csv(cleaned_train_data, "./Data/prepped_train.csv", row.names = FALSE)
-write.csv(cleaned_target, "./Data/prepped_target.csv", row.names = FALSE)
 write.csv(cleaned_test_data, "./Data/prepped_test.csv", row.names = FALSE)
+write.csv(pred_base, "./Data/prediction_base.csv", row.names = FALSE)
+write.csv(cleaned_target, "./Data/prepped_target.csv", row.names = FALSE)
 
 
 #==============================================================================

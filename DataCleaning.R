@@ -20,11 +20,11 @@ cleaned_test_data$GarageCars =  ifelse(is.na(cleaned_test_data$GarageCars), 0, c
 modeMS = names(sort(table(cleaned_test_data$MSZoning), decreasing = TRUE)[1])
 cleaned_test_data$MSZoning =  ifelse(is.na(cleaned_test_data$MSZoning), modeMS, cleaned_test_data$MSZoning)
 
-#Impute LotFrontage in train and test data by kNN with k=sqrt(n)
-imputed_LotFrontage = kNN(data = cleaned_train_data, variable = "LotFrontage", dist_var = c("LotArea"), k = 34, useImputedDist = FALSE)$LotFrontage
-cleaned_train_data$LotFrontage =  imputed_LotFrontage
-imputed_LotFrontage = kNN(data = cleaned_test_data, variable = "LotFrontage", dist_var = c("LotArea"), k = 34, useImputedDist = FALSE)$LotFrontage
-cleaned_test_data$LotFrontage =  imputed_LotFrontage
+#Impute LotFrontage based on combination of train and test data by kNN with k=sqrt(n)
+imputed_LotSizes = rbind(cleaned_train_data[c("LotArea", "LotFrontage")], cleaned_test_data[c("LotArea", "LotFrontage")])
+imputed_LotSizes = kNN(data = imputed_LotSizes, variable = "LotFrontage", dist_var = c("LotArea"), k = 54, useImputedDist = FALSE)
+cleaned_train_data$LotFrontage =  imputed_LotSizes$LotFrontage[1:1460]
+cleaned_test_data$LotFrontage =  imputed_LotSizes$LotFrontage[1461:2919]
 
 #Combining month+year into single ordered feature
 cleaned_train_data$YrSold = train_data$YrSold + ((train_data$MoSold - 1) / 12)
