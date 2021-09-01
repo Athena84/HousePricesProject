@@ -52,27 +52,14 @@ for (col in c("GarageQual", "PoolQC")) {
 }
 
 #Re-order nominal categorical values according to order of median of residuals of the basic linear model 
-for (col in c("Neighborhood", "MSSubClass", "MSZoning", "SaleCondition")) {
+for (col in c("Neighborhood", "MSSubClass", "MSZoning", "SaleCondition", "Utilities", "LandSlope")) {
   cleaned_train_data[,col] <- factor(reorder(cleaned_train_data[,col], residuals, median))
   cleaned_test_data[,col] <- as.integer(factor(cleaned_test_data[,col], levels = levels(cleaned_train_data[,col])))
   cleaned_train_data[,col] <- as.integer(cleaned_train_data[,col])
 }
-
+cleaned_train_data$MasVnrType
 
 #Re-order nominal categorical values manually
-
-#Convert Utility text into ranking
-convert_utility_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 4, Qual)
-  ranking = gsub("AllPub", 4, ranking)
-  ranking = gsub("NoSewr", 3, ranking)
-  ranking = gsub("NoSeWa", 2, ranking)
-  ranking = gsub("ELO", 1, ranking)
-  ranking = as.integer(ranking)
-  return(ranking)
-}
-cleaned_train_data$Utilities = convert_utility_factor(cleaned_train_data$Utilities)
-cleaned_test_data$Utilities = convert_utility_factor(cleaned_test_data$Utilities)
 
 #Convert Fence quality text into ranking
 convert_fence_factor <- function(Qual) {
@@ -87,18 +74,6 @@ convert_fence_factor <- function(Qual) {
 cleaned_train_data$Fence = convert_fence_factor(cleaned_train_data$Fence)
 cleaned_test_data$Fence = convert_fence_factor(cleaned_test_data$Fence)
 
-#Convert Slope quality text into ranking
-convert_slope_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 0, Qual)
-  ranking = gsub("Gtl", 0, ranking)
-  ranking = gsub("Mod", 1, ranking)
-  ranking = gsub("Sev", 2, ranking)
-  ranking = as.integer(ranking)
-  return(ranking)
-}
-cleaned_train_data$LandSlope = convert_slope_factor(cleaned_train_data$LandSlope)
-cleaned_test_data$LandSlope = convert_slope_factor(cleaned_test_data$LandSlope)
-
 #Convert LotShape text into ranking
 convert_lotshape_factor <- function(Qual) {
   ranking = ifelse(is.na(Qual), 0, Qual)
@@ -109,8 +84,8 @@ convert_lotshape_factor <- function(Qual) {
   ranking = as.integer(ranking)
   return(ranking)
 }
-cleaned_train_data$LotShape  = convert_lotshape_factor(cleaned_train_data$LotShape )
-cleaned_test_data$LotShape  = convert_lotshape_factor(cleaned_test_data$LotShape )
+cleaned_train_data$LotShape  = convert_lotshape_factor(cleaned_train_data$LotShape)
+cleaned_test_data$LotShape  = convert_lotshape_factor(cleaned_test_data$LotShape)
 
 #Convert Basement exposure text into ranking
 convert_BsmtExp_factor <- function(Qual) {

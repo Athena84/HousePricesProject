@@ -1,25 +1,29 @@
-
 library(tidyverse)
 library(ggthemes)
 library(scales)
 library(car)
 
+#Setting chart defaults
 old_theme <- theme_set(theme_linedraw() +
                          theme(plot.title = element_text(size = 16, face = "bold")) +
                          theme(axis.title = element_text(size = 14,)) +
                          theme(axis.text = element_text(size = 14,)) 
                        ) 
 
-#Read the training data
+#Read the data
 cleaned_train_data <- read.csv("./Data/cleaned_train.csv", stringsAsFactors = TRUE)
 cleaned_test_data <- read.csv("./Data/cleaned_test.csv", stringsAsFactors = TRUE)
 cleaned_target <- read.csv("./Data/cleaned_target.csv", stringsAsFactors = TRUE)
+prepped_train_data <- read.csv("./Data/prepped_train.csv", stringsAsFactors = FALSE)
+prepped_target <- read.csv("./Data/prepped_target.csv", stringsAsFactors = FALSE)
+prepped_test_data <- read.csv("./Data/prepped_test.csv", stringsAsFactors = FALSE)
 cleaned_train_data$SalePrice = cleaned_target$SalePrice
-cleaned_train_data$LNSalePrice = log(cleaned_target$SalePrice)
+prepped_train_data$SalePrice = cleaned_target$SalePrice
+prepped_train_data$LNSalePrice = prepped_target$SalePrice
 
 #Fitting linear model of saleprice by size and quality and taking residuals
-model_aggregate_quality = lm(cleaned_target$SalePrice ~ cleaned_train_data$TotLivArea + cleaned_train_data$OverallQual + cleaned_train_data$GarageCars)
-cleaned_train_data$residuals <- cleaned_target$SalePrice - predict(model_aggregate_quality, cleaned_train_data)
+model_base = lm(LNSalePrice ~ TotLivArea + OverallQual + OverallCond + GarageCars, data = prepped_train_data)
+prepped_train_data$residuals <- prepped_train_data$LNSalePrice - predict(model_base, prepped_train_data)
 
 
 #Distribution of house prices
@@ -40,6 +44,61 @@ Density_LogPrices <- ggplot(data = cleaned_train_data, aes(x = LNSalePrice)) +
         axis.ticks.y = element_blank())
 Density_LogPrices
 
+
+#Correlation plots
+selected_cols <- c("LNSalePrice","TotLivArea", "LotArea", "LotFrontage", "OverallQual", "GarageCars", "TotRmsAbvGrd", "OverallCond", "Fireplaces", "KitchenQual", "ExterQual", "ExterCond", "HeatingQC", "GarageQual", "PoolQC", "BsmtCond", "Utilities", "Fence", "LandSlope", "LotShape", "BsmtExposure", "BldgType", "MasVnrType", "Foundation", "Electrical", "Functional", "Neighborhood", "MSSubClass", "MSZoning", "SaleCondition")
+correlations_LNPrice <- data.frame(correlations = cor(prepped_train_data[selected_cols], method = "spearman")[1,])
+correlations_LNPrice$features <- rownames(correlations_LNPrice)
+correlations_LNPrice <- arrange(correlations_LNPrice, desc(abs(correlations)))
+correlations_LNPrice_plot <- arrange(correlations_LNPrice, desc(abs(correlations))) %>%
+  ggplot(data = .) +
+  geom_bar(aes(x = features, y= correlations),stat="identity")
+
+correlations_LNPrice_plot
+
+
+selected_cols <- c("residuals","LotArea", "LotFrontage", "TotRmsAbvGrd", "Fireplaces", "KitchenQual", "ExterQual", "ExterCond", "HeatingQC", "GarageQual", "PoolQC", "BsmtCond", "Utilities", "Fence", "LandSlope", "LotShape", "BsmtExposure", "BldgType", "MasVnrType", "Foundation", "Electrical", "Functional", "Neighborhood", "MSSubClass", "MSZoning", "SaleCondition")
+correlations_residuals <- sort(abs(cor(prepped_train_data[selected_cols], method = "spearman")[1,2:25]), decreasing = TRUE)
+
+
+correlations_LNPrice_plot
+correlations_LNPrice
+
+
+
+selected_cols <- c("LNSalePrice","TotLivArea", "LotArea", "LotFrontage", "OverallQual", "GarageCars", "TotRmsAbvGrd", "OverallCond", "Fireplaces", "KitchenQual", "ExterQual", "ExterCond", "HeatingQC", "GarageQual", "PoolQC", "BsmtCond", "Utilities", "Fence", "LandSlope", "LotShape", "BsmtExposure", "BldgType", "MasVnrType", "Foundation", "Electrical", "Functional", "Neighborhood", "MSSubClass", "MSZoning", "SaleCondition")
+correlations_LNPrice <- sort(abs(cor(prepped_train_data[selected_cols], method = "spearman")[2:25,1]), decreasing = TRUE)
+correlations <- data.frame(matrix(data = correlations_LNPrice, nrow = 1))
+colnames(correlations) = names(correlations_LNPrice)
+correlations_LNPrice_plot <- ggplot(data = correlations) +
+  geom_bar()
+
+correlations_LNPrice_plot
+correlations
+
+#Neighborhood plots
+cleaned_train_data$Neighborhood = as.factor(cleaned_train_data$Neighborhood)
+Neighborhood_boxplot <- ggplot(cleaned_train_data, aes(x = Neighborhood, y = SalePrice)) +
+  geom_boxplot() +
+  scale_y_continuous(labels = label_number(suffix = " k", scale = 1e-3)) +
+  labs(title="House price distributions per neighborhood", x ="Neighborhood", y = "House prices ($)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+Neighborhood_boxplot
+
+Neighborhood_boxplot_ordered <- ggplot(data = cleaned_train_data, aes(x = reorder(Neighborhood, SalePrice, median), y = SalePrice)) +
+  geom_boxplot() +
+  scale_y_continuous(labels = label_number(suffix = " k", scale = 1e-3)) +
+  labs(title="House price distributions per neighborhood", x ="Neighborhood", y = "House prices ($)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+Neighborhood_boxplot_ordered
+
+prepped_train_data$Neighborhood <- factor(reorder(cleaned_train_data$Neighborhood, prepped_train_data$residuals, median))
+Neighborhood_boxplot_residuals <- ggplot(data = prepped_train_data, aes(x = Neighborhood, y = residuals)) +
+  geom_boxplot() +
+  labs(title="Distributions of house price residuals per neighborhood", x ="Neighborhood", y = "Residuals of basic linear model of log house price") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  ylim(-0.5, 0.5)
+Neighborhood_boxplot_residuals
 
 
 #Boxplots house prices grouped for categorical
@@ -127,16 +186,7 @@ ProxPos_boxplot <- ggplot(data = cleaned_train_data, aes(x = ProxPos, y = SalePr
   geom_boxplot()
 ProxPos_boxplot
 
-#Works if data as integers (such as toward model)
-cleaned_train_data$Neighborhood = as.factor(cleaned_train_data$Neighborhood)
-Neighborhood_boxplot <- ggplot(cleaned_train_data, aes(x = Neighborhood, y = residuals)) +
-  geom_boxplot()
-Neighborhood_boxplot
 
-#Works if data still as names
-Neighborhood_boxplot <- ggplot(data = cleaned_train_data, aes(x = reorder(Neighborhood, SalePrice, median), y = SalePrice)) +
-  geom_boxplot()
-Neighborhood_boxplot
 
 cleaned_train_data$GarageCars = as.factor(cleaned_train_data$GarageCars)
 GarageCars_boxplot <- ggplot(data = cleaned_train_data, aes(x = GarageCars, y = SalePrice)) +
