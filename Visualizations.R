@@ -2,6 +2,7 @@ library(tidyverse)
 library(ggthemes)
 library(scales)
 library(car)
+library(ggpubr)
 
 #Setting chart defaults
 old_theme <- theme_set(theme_linedraw() +
@@ -63,6 +64,17 @@ Density_LogPrices <- ggplot(data = prepped_train_data, aes(x = LNSalePrice)) +
         axis.ticks.y = element_blank())
 Density_LogPrices
 
+#Normality test
+shapiro.test(cleaned_train_data$SalePrice)
+shapiro.test(log(cleaned_train_data$SalePrice))
+shapiro.test(prepped_train_data$LNSalePrice)
+qqPlot(cleaned_train_data$SalePrice, id = FALSE, ylab = "",
+       xlab = "Normal distribution quantiles", main="Q-Q plot of House prices")
+qqPlot(log(cleaned_train_data$SalePrice, base = exp(1)), id = FALSE, ylab = "",
+       xlab = "Normal distribution quantiles", main="Q-Q plot of Log house prices")
+qqPlot(prepped_train_data$LNSalePrice, id = FALSE, ylab = "",
+       xlab = "Normal distribution quantiles", main="Q-Q plot of residuals base model")
+
 
 #Correlation plots
 
@@ -74,8 +86,6 @@ for (col in selected_cols) {
 }
 selected_cols <- c("House price", "Total living area", "Lot area", "Lot frontage", "Overall quality", "# Cars garage", "# Rooms", "Overall condition", "# Fireplaces","Year sold", "Age built", "Age renovated", selected_cols)
 
-selected_cols
-colnames(cleaned_train_data)
 
 correlations_Price <- data.frame(correlations = abs(cor(cleaned_train_data[selected_cols], method = "spearman")[1,]))
 correlations_Price$features <- rownames(correlations_Price)
@@ -142,6 +152,20 @@ Neighborhood_boxplot_residuals <- ggplot(data = prepped_train_data, aes(x = Neig
   ylim(-0.5, 0.5) +
   coord_flip()
 Neighborhood_boxplot_residuals
+
+
+#Test mean house price per neighborhood
+leveneTest(SalePrice ~ Neighborhood, data = cleaned_train_data) #Variances significantly different so one-way instead of ANOVA
+oneway.test(SalePrice ~ Neighborhood, data = cleaned_train_data)
+
+
+
+
+
+
+
+
+
 
 
 #Boxplots house prices grouped for categorical
