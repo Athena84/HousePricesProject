@@ -20,7 +20,6 @@ cleaned_test_data$GarageCars =  ifelse(is.na(cleaned_test_data$GarageCars), 0, c
 #modeUtil = names(sort(table(cleaned_test_data$Utilities), decreasing = TRUE)[1])
 cleaned_test_data$Utilities =  ifelse(is.na(cleaned_test_data$Utilities), "NoSeWa", cleaned_test_data$Utilities)
 
-
 #Impute MSZoning by mode
 modeMS = names(sort(table(cleaned_test_data$MSZoning), decreasing = TRUE)[1])
 cleaned_test_data$MSZoning =  ifelse(is.na(cleaned_test_data$MSZoning), modeMS, cleaned_test_data$MSZoning)

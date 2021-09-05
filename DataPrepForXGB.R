@@ -24,13 +24,15 @@ cleaned_test_data$LotFrontage = (cleaned_test_data$LotFrontage - mu) / sigma
 
 #Fitting linear model of saleprice by size, quality, condition and taking residuals
 #Taking ln of prices to remove skew and adding it to train df for modelling
-model_data <- cleaned_train_data[c("OverallQual", "TotLivArea", "GarageCars")]
+residuals <- log(cleaned_target$SalePrice)
+
+model_data <- cleaned_train_data[c("OverallQual", "TotLivArea")]
 model_data$LNSalePrice <- log(cleaned_target$SalePrice)
-model_base = lm(LNSalePrice ~ TotLivArea + OverallQual + GarageCars, data = model_data)
+model_base = lm(LNSalePrice ~ TotLivArea + OverallQual, data = model_data)
 residuals <- model_data$LNSalePrice - predict(model_base, model_data)
 summary(model_base)
-plot(model_base)
-plot(residuals)
+#plot(model_base)
+#plot(residuals)
 #influencePlot(model_base)
 #vif(model_base)
 #avPlots(model_base)
@@ -42,26 +44,25 @@ pred_base = data.frame(predictions = predict(model_base, cleaned_test_data))
 #For XGBoost, leave residuals of trained model as target for train data
 cleaned_target$SalePrice = residuals
 
-
 #Convert quality text into rankings implied by the text
 convert_quality_factor <- function(Qual, imputed_Val) {
   ranking = ifelse(is.na(Qual), imputed_Val, Qual)
-  ranking = gsub("Po", 1, ranking)
-  ranking = gsub("Fa", 2, ranking)
-  ranking = gsub("TA", 3, ranking)
-  ranking = gsub("Gd", 4, ranking)
-  ranking = gsub("Ex", 5, ranking)
+  ranking = gsub("Po", 2, ranking)
+  ranking = gsub("Fa", 3, ranking)
+  ranking = gsub("TA", 4, ranking)
+  ranking = gsub("Gd", 5, ranking)
+  ranking = gsub("Ex", 6, ranking)
   ranking = as.integer(ranking)
   return(ranking)
 }
 
 for (col in c("KitchenQual", "ExterQual", "ExterCond", "HeatingQC", "BsmtCond")) {
-  cleaned_train_data[,col] <- convert_quality_factor(cleaned_train_data[,col], 1)
-  cleaned_test_data[,col] <- convert_quality_factor(cleaned_test_data[,col], 1)
+  cleaned_train_data[,col] <- convert_quality_factor(cleaned_train_data[,col], 2)
+  cleaned_test_data[,col] <- convert_quality_factor(cleaned_test_data[,col], 2)
 }
 for (col in c("GarageQual", "PoolQC")) {
-  cleaned_train_data[,col] <- convert_quality_factor(cleaned_train_data[,col], 0)
-  cleaned_test_data[,col] <- convert_quality_factor(cleaned_test_data[,col], 0)
+  cleaned_train_data[,col] <- convert_quality_factor(cleaned_train_data[,col], 1)
+  cleaned_test_data[,col] <- convert_quality_factor(cleaned_test_data[,col], 1)
 }
 
 #Combine new MSSubclass label into closest existing label
@@ -91,7 +92,7 @@ cleaned_test_data$Fence = convert_fence_factor(cleaned_test_data$Fence)
 
 #Convert Building Type text into ranking
 convert_buildtype_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 0, Qual)
+  ranking = ifelse(is.na(Qual), 1, Qual)
   ranking = gsub("Twnhs", 4, ranking)
   ranking = gsub("TwnhsE", 2, ranking)
   ranking = gsub("Duplex", 3, ranking)
@@ -105,11 +106,11 @@ cleaned_test_data$BldgType = convert_buildtype_factor(cleaned_test_data$BldgType
 
 #Convert Masonry Type text into ranking
 convert_masonry_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 0, Qual)
-  ranking = gsub("None", 0, ranking)
-  ranking = gsub("BrkCmn", 1, ranking)
-  ranking = gsub("BrkFace", 2, ranking)
-  ranking = gsub("Stone", 3, ranking)
+  ranking = ifelse(is.na(Qual), 1, Qual)
+  ranking = gsub("None", 1, ranking)
+  ranking = gsub("BrkCmn", 2, ranking)
+  ranking = gsub("BrkFace", 3, ranking)
+  ranking = gsub("Stone", 4, ranking)
   ranking = as.integer(ranking)
   return(ranking)
 }
@@ -148,11 +149,11 @@ cleaned_test_data$Electrical = convert_elec_factor(cleaned_test_data$Electrical)
 
 #Convert LotShape text into ranking
 convert_lotshape_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 0, Qual)
-  ranking = gsub("Reg", 0, ranking)
-  ranking = gsub("IR1", 1, ranking)
-  ranking = gsub("IR2", 2, ranking)
-  ranking = gsub("IR3", 3, ranking)
+  ranking = ifelse(is.na(Qual), 1, Qual)
+  ranking = gsub("Reg", 1, ranking)
+  ranking = gsub("IR1", 2, ranking)
+  ranking = gsub("IR2", 3, ranking)
+  ranking = gsub("IR3", 4, ranking)
   ranking = as.integer(ranking)
   return(ranking)
 }
@@ -161,11 +162,11 @@ cleaned_test_data$LotShape  = convert_lotshape_factor(cleaned_test_data$LotShape
 
 #Convert Basement exposure text into ranking
 convert_BsmtExp_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 0, Qual)
-  ranking = gsub("No", 1, ranking)
-  ranking = gsub("Mn", 2, ranking)
-  ranking = gsub("Av", 3, ranking)
-  ranking = gsub("Gd", 4, ranking)
+  ranking = ifelse(is.na(Qual), 1, Qual)
+  ranking = gsub("No", 2, ranking)
+  ranking = gsub("Mn", 3, ranking)
+  ranking = gsub("Av", 4, ranking)
+  ranking = gsub("Gd", 5, ranking)
   ranking = as.integer(ranking)
   return(ranking)
 }
@@ -174,15 +175,15 @@ cleaned_test_data$BsmtExposure = convert_BsmtExp_factor (cleaned_test_data$BsmtE
 
 #Convert Functional text into ranking
 convert_functional_factor <- function(Qual) {
-  ranking = ifelse(is.na(Qual), 1, Qual)
-  ranking = gsub("Sal", 0, ranking)
-  ranking = gsub("Sev", 0, ranking)
-  ranking = gsub("Maj1", 1, ranking)
-  ranking = gsub("Maj2", 1, ranking)
-  ranking = gsub("Mod", 2, ranking)
-  ranking = gsub("Min1", 3, ranking)
-  ranking = gsub("Min2", 3, ranking)
-  ranking = gsub("Typ", 4, ranking)
+  ranking = ifelse(is.na(Qual), 2, Qual)
+  ranking = gsub("Sal", 1, ranking)
+  ranking = gsub("Sev", 1, ranking)
+  ranking = gsub("Maj1", 2, ranking)
+  ranking = gsub("Maj2", 2, ranking)
+  ranking = gsub("Mod", 3, ranking)
+  ranking = gsub("Min1", 4, ranking)
+  ranking = gsub("Min2", 4, ranking)
+  ranking = gsub("Typ", 5, ranking)
   ranking = as.integer(ranking)
   return(ranking)
 }
