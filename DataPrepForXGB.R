@@ -30,7 +30,7 @@ model_data <- cleaned_train_data[c("OverallQual", "TotLivArea")]
 model_data$LNSalePrice <- log(cleaned_target$SalePrice)
 model_base = lm(LNSalePrice ~ TotLivArea + OverallQual, data = model_data)
 residuals <- model_data$LNSalePrice - predict(model_base, model_data)
-summary(model_base)
+#summary(model_base)
 #plot(model_base)
 #plot(residuals)
 #influencePlot(model_base)

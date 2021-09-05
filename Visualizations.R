@@ -69,12 +69,12 @@ Density_LogPrices
 #Normality test
 shapiro.test(cleaned_train_data$SalePrice)
 shapiro.test(log(cleaned_train_data$SalePrice))
-shapiro.test(prepped_train_data$LNSalePrice)
+shapiro.test(prepped_train_data$residuals)
 qqPlot(cleaned_train_data$SalePrice, id = FALSE, ylab = "",
        xlab = "Normal distribution quantiles", main="Q-Q plot of House prices")
 qqPlot(log(cleaned_train_data$SalePrice, base = exp(1)), id = FALSE, ylab = "",
        xlab = "Normal distribution quantiles", main="Q-Q plot of Log house prices")
-qqPlot(prepped_train_data$LNSalePrice, id = FALSE, ylab = "",
+qqPlot(prepped_train_data$residuals, id = FALSE, ylab = "",
        xlab = "Normal distribution quantiles", main="Q-Q plot of residuals base model")
 
 
@@ -310,10 +310,17 @@ s3d = scatterplot3d(x = prepped_train_data$TotLivArea,
                     angle = 80)$plane3d(model_base)
 
 
+#Feature importance XGBoost
+feat_importance <- read.csv("./Data/FeatImportance.csv", sep = ";", stringsAsFactors = FALSE)
+positions <- arrange(feat_importance, desc(Importance))$Feature
+feat_importance_plot <- ggplot(data = feat_importance) +
+  labs(title="Appearance of features in XGBoost", x ="", y = "% appearance") +
+  geom_bar(aes(x=Feature, y=Importance), stat = "identity") +
+  scale_x_discrete(limits = positions) + 
+  scale_y_continuous(labels = label_number(suffix = "%", scale = 1e2)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-
-
-
+feat_importance_plot
 
 
 
