@@ -3,6 +3,7 @@ library(ggthemes)
 library(scales)
 library(car)
 library(ggpubr)
+library("scatterplot3d")
 
 #Setting chart defaults
 old_theme <- theme_set(theme_linedraw() +
@@ -18,10 +19,11 @@ prepped_train_data <- read.csv("./Data/prepped_train.csv", stringsAsFactors = TR
 prepped_target <- read.csv("./Data/prepped_target.csv", stringsAsFactors = FALSE)
 cleaned_train_data$SalePrice = cleaned_target$SalePrice
 prepped_train_data$SalePrice = cleaned_target$SalePrice
-prepped_train_data$LNSalePrice = prepped_target$SalePrice
+prepped_train_data$LNSalePrice = log(cleaned_target$SalePrice)
 
 #Fitting linear model of saleprice by size and quality and taking residuals
 model_base = lm(LNSalePrice ~ TotLivArea + OverallQual, data = prepped_train_data)
+summary(model_base)
 prepped_train_data$residuals <- prepped_train_data$LNSalePrice - predict(model_base, prepped_train_data)
 
 #Renaming features
@@ -157,6 +159,167 @@ Neighborhood_boxplot_residuals
 #Test mean house price per neighborhood
 leveneTest(SalePrice ~ Neighborhood, data = cleaned_train_data) #Variances significantly different so one-way instead of ANOVA
 oneway.test(SalePrice ~ Neighborhood, data = cleaned_train_data)
+
+#Plotting the linear model
+scatterplot3d(x = prepped_train_data$OverallQual,
+              y = prepped_train_data$TotLivArea,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Overall quality rating",
+              ylab = "Normalized living area",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 20)
+scatterplot3d(x= prepped_train_data$OverallQual,
+              y = prepped_train_data$TotLivArea,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Overall quality rating",
+              ylab = "Normalized living area",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 40)
+scatterplot3d(x = prepped_train_data$OverallQual,
+              y = prepped_train_data$TotLivArea,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Overall quality rating",
+              ylab = "Normalized living area",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 60)
+scatterplot3d(x = prepped_train_data$OverallQual,
+              y = prepped_train_data$TotLivArea,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Overall quality rating",
+              ylab = "Normalized living area",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 80)
+
+scatterplot3d(x = prepped_train_data$OverallQual,
+              y = prepped_train_data$TotLivArea,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Overall quality rating",
+              ylab = "Normalized living area",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 20)$plane3d(model_base)
+scatterplot3d(x= prepped_train_data$OverallQual,
+              y = prepped_train_data$TotLivArea,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Overall quality rating",
+              ylab = "Normalized living area",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 40)$plane3d(model_base)
+scatterplot3d(x = prepped_train_data$OverallQual,
+              y = prepped_train_data$TotLivArea,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Overall quality rating",
+              ylab = "Normalized living area",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 60)$plane3d(model_base)
+scatterplot3d(x = prepped_train_data$OverallQual,
+              y = prepped_train_data$TotLivArea,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Overall quality rating",
+              ylab = "Normalized living area",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 80)$plane3d(model_base)
+
+scatterplot3d(x = prepped_train_data$TotLivArea,
+              y = prepped_train_data$OverallQual,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Normalized living area",
+              ylab = "Overall quality rating",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 20)
+scatterplot3d(x = prepped_train_data$TotLivArea,
+              y = prepped_train_data$OverallQual,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Normalized living area",
+              ylab = "Overall quality rating",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 40)
+scatterplot3d(x = prepped_train_data$TotLivArea,
+              y = prepped_train_data$OverallQual,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Normalized living area",
+              ylab = "Overall quality rating",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 60)
+s3d = scatterplot3d(x = prepped_train_data$TotLivArea,
+              y = prepped_train_data$OverallQual,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Normalized living area",
+              ylab = "Overall quality rating",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 80)
+
+scatterplot3d(x = prepped_train_data$TotLivArea,
+              y = prepped_train_data$OverallQual,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Normalized living area",
+              ylab = "Overall quality rating",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 20)$plane3d(model_base)
+scatterplot3d(x = prepped_train_data$TotLivArea,
+              y = prepped_train_data$OverallQual,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Normalized living area",
+              ylab = "Overall quality rating",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 40)$plane3d(model_base)
+scatterplot3d(x = prepped_train_data$TotLivArea,
+              y = prepped_train_data$OverallQual,
+              z = prepped_train_data$LNSalePrice,
+              main = "Log house prices by total area and Overall quality",
+              xlab = "Normalized living area",
+              ylab = "Overall quality rating",
+              zlab = "Log house price",
+              grid = TRUE, box = TRUE,
+              angle = 60)$plane3d(model_base)
+s3d = scatterplot3d(x = prepped_train_data$TotLivArea,
+                    y = prepped_train_data$OverallQual,
+                    z = prepped_train_data$LNSalePrice,
+                    main = "Log house prices by total area and Overall quality",
+                    xlab = "Normalized living area",
+                    ylab = "Overall quality rating",
+                    zlab = "Log house price",
+                    grid = TRUE, box = TRUE,
+                    angle = 80)$plane3d(model_base)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
