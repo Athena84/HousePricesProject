@@ -24,7 +24,7 @@ cleaned_test_data$LotFrontage = (cleaned_test_data$LotFrontage - mu) / sigma
 
 #Fitting linear model of saleprice by size, quality, condition and taking residuals
 #Taking ln of prices to remove skew and adding it to train df for modelling
-residuals <- log(cleaned_target$SalePrice)
+#residuals <- log(cleaned_target$SalePrice)  
 
 model_data <- cleaned_train_data[c("OverallQual", "TotLivArea")]
 model_data$LNSalePrice <- log(cleaned_target$SalePrice)
@@ -39,6 +39,7 @@ residuals <- model_data$LNSalePrice - predict(model_base, model_data)
 #confint(model_base)
 
 #Calculating prediction base model on test date (XGBoost prediction on residuals will be added to this later)
+#pred_base = data.frame(predictions = rep(0, 1460))
 pred_base = data.frame(predictions = predict(model_base, cleaned_test_data))
 
 #For XGBoost, leave residuals of trained model as target for train data
@@ -189,6 +190,11 @@ convert_functional_factor <- function(Qual) {
 }
 cleaned_train_data$Functional = convert_functional_factor(cleaned_train_data$Functional)
 cleaned_test_data$Functional = convert_functional_factor(cleaned_test_data$Functional)
+
+#Renaming features (only for certain visualization options)
+#improved_colnames <- c("Id", "Lot area", "Lot frontage", "Overall quality", "# Cars garage", "# Rooms", "Overall condition", "# Fireplaces", "Aircon", "Street", "Kitchen quality", "Exterior quality", "Exterior condition", "Heating quality", "Garage quality", "Pool quality", "Basement condition", "Utilities", "Fence type", "Land slope", "Lot shape", "Basement exposure", "Building type", "Masonry type", "Foundation", "Electricity", "Functionality", "Neighborhood", "House class", "Zoning", "Sale condition", "Year sold", "Age built", "Age renovated", "Total living area", "Proximity positive feat", "Proximity road", "Proximity railroad", "Heating type", "Basement quality", "# Full bathrooms", "# Half bathrooms", "Enclosed porch area")
+#colnames(cleaned_train_data) <- improved_colnames
+#colnames(cleaned_test_data) <- improved_colnames
 
 #Save prepped data set for XGB
 write.csv(cleaned_train_data, "./Data/prepped_train.csv", row.names = FALSE)
