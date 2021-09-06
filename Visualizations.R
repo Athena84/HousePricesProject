@@ -77,6 +77,9 @@ qqPlot(log(cleaned_train_data$SalePrice, base = exp(1)), id = FALSE, ylab = "",
 qqPlot(prepped_train_data$residuals, id = FALSE, ylab = "",
        xlab = "Normal distribution quantiles", main="Q-Q plot of residuals base model")
 
+residuals_xgb = read.csv("./Data/residuals.csv", stringsAsFactors = FALSE)
+qqPlot(residuals_xgb, id = FALSE, ylab = "",
+       xlab = "Normal distribution quantiles", main="Q-Q plot of residuals combined model")
 
 #Correlation plots
 
@@ -363,3 +366,5 @@ Condgrouped_plot <- ggplot(data = Condgrouped, aes(x = avSalePrice, y = TotLivAr
   scale_x_continuous(labels = label_number(suffix = " k", scale = 1e-3)) +
   labs(title = "Average house prices per area and condition", x ="Average house price ($)", y = "Total living area (k sqf)", colour = "Condition rating")
 Condgrouped_plot
+
+
