@@ -346,25 +346,40 @@ Density_LNPredictions <- ggplot(data = predictions, aes(x = LNSalePrice)) +
 Density_LNPredictions
 
 #Investment opportunity plots
-selection <- cleaned_train_data[,c("SalePrice", "TotLivArea", "OverallQual", "OverallCond")]
+selection <- cleaned_train_data[,c("SalePrice", "TotLivArea", "OverallQual", "OverallCond", "Neighborhood")]
+
+NBgrouped <- group_by(selection, Neighborhood, OverallQual) %>%
+  summarise(., avSalePrice = mean(SalePrice))
+NBgrouped_plot <- ggplot(data = NBgrouped, aes(x = avSalePrice, y = Neighborhood, color = OverallQual)) +
+  geom_point() + 
+  scale_x_continuous(labels = label_number(suffix = " k", scale = 1e-3)) +
+  labs(title = "Average house prices per area and quality", x ="Average house price ($)", y = "Neighborhood", colour = "Quality rating")
+
 selection <- selection[(selection$TotLivArea < 4000),]
 selection <- selection[(selection$TotLivArea > 1000),]
 selection$TotLivArea = as.factor(cut_width(selection$TotLivArea / 1000, width = 0.25, boundary = 1))
-
 Qualgrouped <- group_by(selection, TotLivArea, OverallQual) %>%
   summarise(., avSalePrice = mean(SalePrice))
 Qualgrouped_plot <- ggplot(data = Qualgrouped, aes(x = avSalePrice, y = TotLivArea, color = OverallQual)) +
   geom_point() + 
   scale_x_continuous(labels = label_number(suffix = " k", scale = 1e-3)) +
   labs(title = "Average house prices per area and quality", x ="Average house price ($)", y = "Total living area (k sqf)", colour = "Quality rating")
-Qualgrouped_plot
-
 Condgrouped <- group_by(selection, TotLivArea, OverallCond) %>%
   summarise(., avSalePrice = mean(SalePrice))
 Condgrouped_plot <- ggplot(data = Condgrouped, aes(x = avSalePrice, y = TotLivArea, color = OverallCond)) +
   geom_point() + 
   scale_x_continuous(labels = label_number(suffix = " k", scale = 1e-3)) +
   labs(title = "Average house prices per area and condition", x ="Average house price ($)", y = "Total living area (k sqf)", colour = "Condition rating")
+
+
+
+Qualgrouped_plot
 Condgrouped_plot
+NBgrouped_plot
 
-
+#Find indices for interesting influence plots SHAP
+selection <- cleaned_train_data[,c("Id", "TotLivArea", "OverallQual")]
+selection <- selection[(selection$TotLivArea < 3750),]
+selection <- selection[(selection$TotLivArea > 3250),]
+selection <- selection[(selection$OverallQual == 5),]
+selection
